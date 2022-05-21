@@ -1,26 +1,29 @@
-package me.m1dnightninja.midnightlib.config;
+package org.wallentines.midnightlib.config;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import com.google.gson.internal.LinkedTreeMap;
+import org.wallentines.midnightlib.config.serialization.ConfigSerializer;
+import org.wallentines.midnightlib.config.serialization.InlineSerializer;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class ConfigSection {
     private final ConfigRegistry reg;
     private final LinkedTreeMap<String, Object> entries = new LinkedTreeMap<>();
 
+    private final HashMap<String, Object> cache = new HashMap<>();
+    private final int cacheSize;
+
     public ConfigSection() {
-        this(ConfigRegistry.INSTANCE);
+        this(ConfigRegistry.INSTANCE, 10);
     }
 
-    public ConfigSection(ConfigRegistry reg) {
+    public ConfigSection(ConfigRegistry reg, int cacheSize) {
         this.reg = reg;
+        this.cacheSize = cacheSize;
     }
 
     public <T> void set(String key, T obj) {
@@ -41,16 +44,16 @@ public class ConfigSection {
         // Try to Serialize Map
         if (obj instanceof Map) {
 
-            HashMap<String, Object> out = new HashMap<>();
+            LinkedTreeMap<String, Object> out = new LinkedTreeMap<>();
             for (Map.Entry<?, ?> ent : ((Map<?, ?>) obj).entrySet()) {
                 out.put(ent.getKey().toString(), serialize(ent.getValue()));
             }
             return out;
 
         // Try to serialize List elements
-        } else if(obj instanceof List) {
+        } else if(obj instanceof Collection) {
             List<Object> serialized = new ArrayList<>();
-            for(Object o : (List<?>) obj) {
+            for(Object o : (Collection<?>) obj) {
                 serialized.add(serialize(o));
             }
             return serialized;
@@ -243,6 +246,10 @@ public class ConfigSection {
 
     @SuppressWarnings("unchecked")
     private <T> T convert(Object o, Class<T> clazz) {
+
+        if(o == null) {
+            throw new IllegalStateException("Unable to convert null to " + clazz.getName() + "!");
+        }
 
         if(reg != null) {
             if(reg.canSerialize(clazz) && o instanceof ConfigSection) {

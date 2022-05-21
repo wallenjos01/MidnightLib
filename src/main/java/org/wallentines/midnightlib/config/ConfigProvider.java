@@ -1,4 +1,4 @@
-package me.m1dnightninja.midnightlib.config;
+package org.wallentines.midnightlib.config;
 
 import java.io.File;
 import java.io.InputStream;

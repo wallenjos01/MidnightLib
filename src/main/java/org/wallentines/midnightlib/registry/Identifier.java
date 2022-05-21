@@ -1,6 +1,6 @@
-package me.m1dnightninja.midnightlib.registry;
+package org.wallentines.midnightlib.registry;
 
-import me.m1dnightninja.midnightlib.config.InlineSerializer;
+import org.wallentines.midnightlib.config.serialization.InlineSerializer;
 
 public class Identifier {
 
@@ -37,10 +37,6 @@ public class Identifier {
         }
 
         return new Identifier(ss[0], ss[1]);
-    }
-
-    public static Identifier parseOrDefault(String toParse) {
-        return parseOrDefault(toParse, "minecraft");
     }
 
     public static Identifier parseOrDefault(String toParse, String defaultNamespace) {
@@ -87,10 +83,17 @@ public class Identifier {
         return toString().hashCode();
     }
 
-    public static final InlineSerializer<Identifier> SERIALIZER = new InlineSerializer<Identifier>() {
+    public static class Serializer implements InlineSerializer<Identifier> {
+
+        private final String defaultNamespace;
+
+        public Serializer(String defaultNamespace) {
+            this.defaultNamespace = defaultNamespace;
+        }
+
         @Override
         public Identifier deserialize(String s) {
-            return parseOrDefault(s);
+            return parseOrDefault(s, defaultNamespace);
         }
 
         @Override

@@ -1,4 +1,4 @@
-package me.m1dnightninja.midnightlib.event;
+package org.wallentines.midnightlib.event;
 
 public interface EventHandler<T> {
 

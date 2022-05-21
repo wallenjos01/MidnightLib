@@ -1,4 +1,4 @@
-package me.m1dnightninja.midnightlib.event;
+package org.wallentines.midnightlib.event;
 
 import java.util.HashMap;
 
@@ -47,6 +47,15 @@ public class Event {
         if(events.containsKey(event)) {
             events.get(event).clear();
         }
+    }
+
+    protected void cancel() {
+
+        HandlerList<?> handlers = events.get(getClass());
+        if(handlers == null) return;
+
+        handlers.cancel();
+
     }
 
 }

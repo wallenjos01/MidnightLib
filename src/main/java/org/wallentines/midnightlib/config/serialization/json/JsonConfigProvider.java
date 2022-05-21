@@ -1,11 +1,11 @@
-package me.m1dnightninja.midnightlib.config.json;
+package org.wallentines.midnightlib.config.serialization.json;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import com.google.gson.internal.LazilyParsedNumber;
-import me.m1dnightninja.midnightlib.config.ConfigProvider;
-import me.m1dnightninja.midnightlib.config.ConfigSection;
+import org.wallentines.midnightlib.config.ConfigProvider;
+import org.wallentines.midnightlib.config.ConfigSection;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;

@@ -1,6 +1,6 @@
-package me.m1dnightninja.midnightlib.registry;
+package org.wallentines.midnightlib.registry;
 
-import me.m1dnightninja.midnightlib.config.ConfigSection;
+import org.wallentines.midnightlib.config.ConfigSection;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -181,7 +181,7 @@ public class Registry<T> implements Iterable<T> {
 
     @Override
     public Iterator<T> iterator() {
-        return new Iterator<>() {
+        return new Iterator<T>() {
 
             private int index = 0;
 
