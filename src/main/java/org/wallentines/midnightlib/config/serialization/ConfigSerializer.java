@@ -2,6 +2,7 @@ package org.wallentines.midnightlib.config.serialization;
 
 import org.wallentines.midnightlib.config.ConfigSection;
 
+import java.util.List;
 import java.util.function.Function;
 
 public interface ConfigSerializer<T> {
@@ -22,6 +23,18 @@ public interface ConfigSerializer<T> {
 
     static <T, R> Entry<T, R> entry(Class<T> clazz, String key, Function<R, T> getter) {
         return new Entry<>(clazz, key, getter);
+    }
+
+    @SuppressWarnings("unchecked")
+    static <T, R> Entry<? extends List<T>, R> listEntry(String key, Function<R, List<T>> getter) {
+
+        try {
+            Class<List<T>> listClazz = ((Class<List<T>>) Class.forName("java.util.List"));
+            return new Entry<>(listClazz, key, getter);
+        } catch (ClassNotFoundException ex) {
+            // Ignore
+        }
+        return null;
     }
 
     static <T> ConfigSerializer<T> of(Function<T, ConfigSection> serialize, Function<ConfigSection, T> deserialize) {
@@ -84,7 +97,7 @@ public interface ConfigSerializer<T> {
                 obj -> new ConfigSection()
                         .with(ent.key, ent.getOrDefault(obj))
                         .with(ent2.key, ent2.getOrDefault(obj))
-                        .with(ent3.key, ent2.getOrDefault(obj)),
+                        .with(ent3.key, ent3.getOrDefault(obj)),
                 sec -> func.create(
                         ent.parse(sec),
                         ent2.parse(sec),

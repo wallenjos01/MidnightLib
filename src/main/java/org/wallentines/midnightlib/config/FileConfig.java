@@ -65,10 +65,14 @@ public class FileConfig {
 
         for(File f : list) {
 
-            if(!f.getName().startsWith(prefix) || f.getName().equals(prefix)) continue;
-            String suffix = f.getName().substring(prefix.length());
+            int dot = f.getName().lastIndexOf('.');
+            if(dot == -1) continue;
 
-            ConfigProvider prov = ConfigRegistry.INSTANCE.getProviderForFileType(suffix);
+            String ext = f.getName().substring(dot);
+            String fileName = f.getName().substring(0, dot);
+
+            if(!prefix.equals(fileName)) continue;
+            ConfigProvider prov = ConfigRegistry.INSTANCE.getProviderForFileType(ext);
 
             if(prov != null) {
                 return new FileConfig(f, prov);
