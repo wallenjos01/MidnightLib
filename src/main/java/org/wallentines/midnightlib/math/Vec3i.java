@@ -22,7 +22,7 @@ public class Vec3i {
     }
 
     public double distance(Vec3i vec2) {
-        return Math.sqrt(this.getX() - vec2.getX() ^ 2 + (this.getY() - vec2.getY()) ^ 2 + (this.getZ() - vec2.getZ()) ^ 2);
+        return Math.sqrt(Math.pow(this.getX() - vec2.getX(), 2) + Math.pow(this.getY() - vec2.getY(), 2) + Math.pow(this.getZ() - vec2.getZ(), 2));
     }
 
     public static Vec3i parse(String str) {
@@ -99,7 +99,7 @@ public class Vec3i {
 
         @Override
         public String serialize(Vec3i object) {
-            return toString();
+            return object.toString();
         }
     };
 }

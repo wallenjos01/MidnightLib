@@ -3,10 +3,7 @@ package org.wallentines.midnightlib.config;
 import org.wallentines.midnightlib.config.serialization.json.JsonConfigProvider;
 import org.wallentines.midnightlib.config.serialization.ConfigSerializer;
 import org.wallentines.midnightlib.config.serialization.InlineSerializer;
-import org.wallentines.midnightlib.math.Color;
-import org.wallentines.midnightlib.math.Region;
-import org.wallentines.midnightlib.math.Vec3d;
-import org.wallentines.midnightlib.math.Vec3i;
+import org.wallentines.midnightlib.math.*;
 import org.wallentines.midnightlib.registry.Identifier;
 
 import java.io.File;
@@ -133,6 +130,8 @@ public class ConfigRegistry {
         registerInlineSerializer(Identifier.class, new Identifier.Serializer(defaultNamespace));
         registerInlineSerializer(Vec3d.class, Vec3d.SERIALIZER);
         registerInlineSerializer(Vec3i.class, Vec3i.SERIALIZER);
+        registerInlineSerializer(Vec2d.class, Vec2d.SERIALIZER);
+        registerInlineSerializer(Vec2i.class, Vec2i.SERIALIZER);
         registerInlineSerializer(Region.class, Region.SERIALIZER);
         registerInlineSerializer(Color.class, Color.SERIALIZER);
         registerInlineSerializer(UUID.class, UUID_SERIALIZER);
