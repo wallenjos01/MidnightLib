@@ -2,10 +2,11 @@ package org.wallentines.midnightlib.registry;
 
 import org.wallentines.midnightlib.config.serialization.InlineSerializer;
 
+@SuppressWarnings("unused")
 public class Identifier {
 
 
-    private static final IllegalArgumentException EXCEPTION = new IllegalArgumentException("Unable to parse MIdentifier!");
+    private static final IllegalArgumentException EXCEPTION = new IllegalArgumentException("Unable to parse Identifier!");
 
     private final String namespace;
     private final String path;
@@ -105,6 +106,6 @@ public class Identifier {
         public boolean canDeserialize(String s) {
             return s.length() > 0 && (!s.contains(":") || isValid(s.split(":")));
         }
-    };
+    }
 
 }

@@ -10,20 +10,17 @@ import org.wallentines.midnightlib.config.serialization.InlineSerializer;
 
 import java.util.*;
 
+@SuppressWarnings("unused")
 public class ConfigSection {
     private final ConfigRegistry reg;
     private final LinkedTreeMap<String, Object> entries = new LinkedTreeMap<>();
 
-    private final HashMap<String, Object> cache = new HashMap<>();
-    private final int cacheSize;
-
     public ConfigSection() {
-        this(ConfigRegistry.INSTANCE, 10);
+        this(ConfigRegistry.INSTANCE);
     }
 
-    public ConfigSection(ConfigRegistry reg, int cacheSize) {
+    public ConfigSection(ConfigRegistry reg) {
         this.reg = reg;
-        this.cacheSize = cacheSize;
     }
 
     public <T> void set(String key, T obj) {
@@ -44,32 +41,38 @@ public class ConfigSection {
         // Try to Serialize Map
         if (obj instanceof Map) {
 
-            LinkedTreeMap<String, Object> out = new LinkedTreeMap<>();
+            ConfigSection out = new ConfigSection();
             for (Map.Entry<?, ?> ent : ((Map<?, ?>) obj).entrySet()) {
-                out.put(ent.getKey().toString(), serialize(ent.getValue()));
+                out.set(ent.getKey().toString(), ent.getValue());
             }
             return out;
+        }
 
         // Try to serialize List elements
-        } else if(obj instanceof Collection) {
+        if(obj instanceof Collection) {
             List<Object> serialized = new ArrayList<>();
-            for(Object o : (Collection<?>) obj) {
+            for (Object o : (Collection<?>) obj) {
                 serialized.add(serialize(o));
             }
             return serialized;
 
-        // Try to serialize as a ConfigSection
-        } else if (reg != null && reg.canSerialize(obj.getClass())) {
-
-            return reg.getSerializer((Class<T>) obj.getClass()).serialize(obj);
-
-        // Try to serialize as a String
-        } else if(reg != null && reg.canSerializeInline(obj.getClass())) {
-
-            return reg.getInlineSerializer((Class<T>) obj.getClass()).serialize(obj);
         }
-        // Return the raw data if we cannot serialize
-        return obj;
+        // Check if the object is a primitive or section
+        if(obj instanceof String || obj instanceof Number || obj instanceof Boolean || obj instanceof ConfigSection) return obj;
+
+        if (reg != null) {
+
+            // Try to serialize as a String
+            InlineSerializer<T> inlineSerializer = reg.getInlineSerializer((Class<T>) obj.getClass(), ConfigRegistry.Direction.SERIALIZE);
+            if(inlineSerializer != null) return inlineSerializer.serialize(obj);
+
+            // Try to serialize as a ConfigSection
+            ConfigSerializer<T> serializer = reg.getSerializer((Class<T>) obj.getClass(), ConfigRegistry.Direction.SERIALIZE);
+            if (serializer != null) return serializer.serialize(obj);
+        }
+
+        // Convert to a string if we cannot serialize
+        return obj.toString();
     }
 
     public void setMap(String id, String keyLabel, String valueLabel, Map<?, ?> map) {
@@ -97,6 +100,7 @@ public class ConfigSection {
 
     public <T> T get(String key, Class<T> clazz) {
         Object out = this.get(key);
+        if(out == null) throw new IllegalArgumentException("Unable to convert null to " + clazz.getName() + "! Section has no value with key " + key + "!");
 
         return convert(out, clazz);
     }
@@ -217,6 +221,26 @@ public class ConfigSection {
         return out;
     }
 
+    public <T> List<T> getListFiltered(String key, ConfigSerializer<T> serializer) {
+
+        List<?> lst = getList(key);
+        List<T> out = new ArrayList<>();
+        for(Object o : lst) {
+            out.add(serializer.deserialize((ConfigSection) o));
+        }
+        return out;
+    }
+
+    public <T> List<T> getListFiltered(String key, InlineSerializer<T> serializer) {
+
+        List<?> lst = getList(key);
+        List<T> out = new ArrayList<>();
+        for(Object o : lst) {
+            out.add(serializer.deserialize(o.toString()));
+        }
+        return out;
+    }
+
     public ConfigSection getSection(String key) {
         return this.get(key, ConfigSection.class);
     }
@@ -251,33 +275,36 @@ public class ConfigSection {
             throw new IllegalStateException("Unable to convert null to " + clazz.getName() + "!");
         }
 
+        if (o.getClass() == clazz || clazz.isAssignableFrom(o.getClass())) {
+            return (T) o;
+        }
+
         if(reg != null) {
-            if(reg.canSerialize(clazz) && o instanceof ConfigSection) {
-                ConfigSerializer<T> ser = reg.getSerializer(clazz);
-                T ret = ser.deserialize((ConfigSection) o);
-                if (ret == null) {
-                    throw new IllegalStateException("Invalid Type! " + o.getClass().getName() + " cannot be converted to " + clazz.getName());
-                }
-                return ret;
-            }
-            if(reg.canSerializeInline(clazz)) {
 
-                InlineSerializer<T> ser = reg.getInlineSerializer(clazz);
-                T ret = ser.deserialize(o.toString());
-                if (ret == null) {
-                    throw new IllegalStateException("Invalid Type! " + o.getClass().getName() + " cannot be converted to " + clazz.getName());
+            if(o instanceof ConfigSection) {
+                ConfigSerializer<T> serializer = reg.getSerializer(clazz, ConfigRegistry.Direction.DESERIALIZE);
+                if (serializer != null) {
+                    T ret = serializer.deserialize((ConfigSection) o);
+                    if (ret == null) {
+                        throw new IllegalStateException("Invalid Type! " + o.getClass().getName() + " cannot be converted to " + clazz.getName());
+                    }
+                    return ret;
                 }
-
-                return ret;
             }
 
+            if(o instanceof String) {
+                InlineSerializer<T> inlineSerializer = reg.getInlineSerializer(clazz, ConfigRegistry.Direction.DESERIALIZE);
+                if (inlineSerializer != null) {
+                    T ret = inlineSerializer.deserialize((String) o);
+                    if (ret == null) {
+                        throw new IllegalStateException("Invalid Type! " + o.getClass().getName() + " cannot be converted to " + clazz.getName());
+                    }
+                    return ret;
+                }
+            }
         }
 
-        if (!clazz.isAssignableFrom(o.getClass())) {
-            throw new IllegalStateException("Invalid Type! " + o.getClass().getName() + " cannot be converted to " + clazz.getName());
-        }
-
-        return (T) o;
+        throw new IllegalStateException("Invalid Type! " + o.getClass().getName() + " cannot be converted to " + clazz.getName());
     }
 
 
@@ -285,12 +312,12 @@ public class ConfigSection {
 
         if(reg != null) {
             if(reg.canSerialize(clazz) && o instanceof ConfigSection) {
-                ConfigSerializer<T> ser = reg.getSerializer(clazz);
+                ConfigSerializer<T> ser = reg.getSerializer(clazz, ConfigRegistry.Direction.DESERIALIZE);
                 return ser.canDeserialize((ConfigSection) o);
             }
             if(reg.canSerializeInline(clazz)) {
 
-                InlineSerializer<T> ser = reg.getInlineSerializer(clazz);
+                InlineSerializer<T> ser = reg.getInlineSerializer(clazz, ConfigRegistry.Direction.DESERIALIZE);
                 return ser.canDeserialize(o.toString());
             }
         }

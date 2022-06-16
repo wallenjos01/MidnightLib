@@ -5,6 +5,7 @@ import org.wallentines.midnightlib.config.ConfigSection;
 import java.util.*;
 import java.util.function.Function;
 
+@SuppressWarnings({"DuplicatedCode", "unused"})
 public interface ConfigSerializer<T> {
 
     T deserialize(ConfigSection section);
@@ -203,7 +204,6 @@ public interface ConfigSerializer<T> {
                         ent6.parse(sec)),
                 sec -> ent.isValid(sec) &&
                         ent2.isValid(sec) &&
-                        ent3.isValid(sec) &&
                         ent3.isValid(sec) &&
                         ent4.isValid(sec) &&
                         ent5.isValid(sec) &&
@@ -1056,7 +1056,7 @@ public interface ConfigSerializer<T> {
             ConfigSection sec = section.getSection(key);
             HashMap<String, T> out = new HashMap<>();
             for(String s : sec.getKeys()) {
-                out.put(s, parser == null ? sec.get(key, clazz) : parser.apply(sec));
+                out.put(s, parser == null ? sec.get(s, clazz) : parser.apply(sec));
             }
             return out;
         }

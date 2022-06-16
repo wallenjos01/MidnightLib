@@ -140,18 +140,8 @@ public class Color {
         return new Color((int) (red * multiplier), (int) (green * multiplier), (int) (blue * multiplier));
     }
 
-    public static Color WHITE = new Color(16777215);
+    public static final Color WHITE = new Color(16777215);
 
-    public static final InlineSerializer<Color> SERIALIZER = new InlineSerializer<Color>() {
-        @Override
-        public Color deserialize(String s) {
-            return new Color(s);
-        }
-
-        @Override
-        public String serialize(Color object) {
-            return object.toHex();
-        }
-    };
+    public static final InlineSerializer<Color> SERIALIZER = InlineSerializer.of(Color::toHex, Color::new);
 }
 

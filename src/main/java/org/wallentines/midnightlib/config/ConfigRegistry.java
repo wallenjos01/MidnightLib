@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
+@SuppressWarnings("unused")
 public class ConfigRegistry {
 
     public static final ConfigRegistry INSTANCE = new ConfigRegistry();
@@ -47,38 +48,45 @@ public class ConfigRegistry {
     }
 
     @SuppressWarnings("unchecked")
-    public <T> ConfigSerializer<T> getSerializer(Class<T> clazz) {
+    public <T> ConfigSerializer<T> getSerializer(Class<T> clazz, Direction dir) {
+
+        ConfigSerializer<T> out = (ConfigSerializer<T>) serializers.get(clazz);
+        if(out != null) return out;
+
         for(Class<?> ser : serializers.keySet()) {
-            if(ser == clazz || clazz.isAssignableFrom(ser)) return (ConfigSerializer<T>) serializers.get(ser);
+            if(
+                dir == Direction.SERIALIZE && ser.isAssignableFrom(clazz) ||
+                dir == Direction.DESERIALIZE && clazz.isAssignableFrom(ser)
+            )
+                return (ConfigSerializer<T>) serializers.get(ser);
         }
 
         return null;
     }
 
     @SuppressWarnings("unchecked")
-    public <T> InlineSerializer<T> getInlineSerializer(Class<T> clazz) {
+    public <T> InlineSerializer<T> getInlineSerializer(Class<T> clazz, Direction dir) {
+
+        InlineSerializer<T> out = (InlineSerializer<T>) inlineSerializers.get(clazz);
+        if(out != null) return out;
+
         for(Class<?> ser : inlineSerializers.keySet()) {
-            if(ser == clazz || clazz.isAssignableFrom(ser)) return (InlineSerializer<T>) inlineSerializers.get(ser);
+            if(
+                dir == Direction.SERIALIZE && ser.isAssignableFrom(clazz) ||
+                dir == Direction.DESERIALIZE && clazz.isAssignableFrom(ser)
+            )
+                return (InlineSerializer<T>) inlineSerializers.get(ser);
         }
 
         return null;
     }
 
     public boolean canSerialize(Class<?> clazz) {
-
-        for(Class<?> ser : serializers.keySet()) {
-            if(ser == clazz || clazz.isAssignableFrom(ser)) return true;
-        }
-
-        return false;
+        return getSerializer(clazz, Direction.SERIALIZE) != null;
     }
 
     public boolean canSerializeInline(Class<?> clazz) {
-        for(Class<?> ser : inlineSerializers.keySet()) {
-            if(ser == clazz || clazz.isAssignableFrom(ser)) return true;
-        }
-
-        return false;
+        return getInlineSerializer(clazz, Direction.SERIALIZE) != null;
     }
 
     public <T extends ConfigProvider> T registerProvider(T prov) {
@@ -135,6 +143,12 @@ public class ConfigRegistry {
         registerInlineSerializer(Region.class, Region.SERIALIZER);
         registerInlineSerializer(Color.class, Color.SERIALIZER);
         registerInlineSerializer(UUID.class, UUID_SERIALIZER);
+    }
+
+    public enum Direction {
+
+        SERIALIZE,
+        DESERIALIZE
 
     }
 
