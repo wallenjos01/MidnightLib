@@ -42,8 +42,10 @@ public class ConfigSection {
         if (obj instanceof Map) {
 
             ConfigSection out = new ConfigSection();
-            for (Map.Entry<?, ?> ent : ((Map<?, ?>) obj).entrySet()) {
-                out.set(ent.getKey().toString(), ent.getValue());
+            HashMap<String, ?> map = serializeMap((Map<?,?>) obj);
+
+            for (Map.Entry<String, ?> ent : map.entrySet()) {
+                out.set(ent.getKey(), ent.getValue());
             }
             return out;
         }
@@ -323,6 +325,25 @@ public class ConfigSection {
         }
 
         return clazz.isAssignableFrom(o.getClass());
+    }
+
+    @SuppressWarnings("unchecked")
+    private <K, V> HashMap<String, V> serializeMap(Map<K,V> in) {
+
+        HashMap<String, V> out = new HashMap<>();
+        if(in.isEmpty()) return out;
+
+        InlineSerializer<K> ser = InlineSerializer.of(Objects::toString, str -> null);
+        if(reg != null) {
+            InlineSerializer<K> ser1 = reg.getInlineSerializer((Class<K>) in.entrySet().iterator().next().getKey().getClass(), ConfigRegistry.Direction.SERIALIZE);
+            if(ser1 != null) ser = ser1;
+        }
+
+        for(Map.Entry<K, V> ent : in.entrySet()) {
+            out.put(ser.serialize(ent.getKey()), ent.getValue());
+        }
+
+        return out;
     }
 
     public JsonObject toJson() {

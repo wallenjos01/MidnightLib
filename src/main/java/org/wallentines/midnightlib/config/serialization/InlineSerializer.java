@@ -1,8 +1,10 @@
 package org.wallentines.midnightlib.config.serialization;
 
+import org.wallentines.midnightlib.config.ConfigSection;
+
 import java.util.function.Function;
 
-public interface InlineSerializer<T> {
+public interface InlineSerializer<T> extends Serializer<T, String> {
 
     T deserialize(String s);
 
@@ -17,6 +19,27 @@ public interface InlineSerializer<T> {
         }
         return val != null;
     }
+
+    default Serializer<T, Object> toRaw() {
+
+        return new Serializer<T, Object>() {
+            @Override
+            public Object serialize(T value) {
+                return InlineSerializer.this.serialize(value);
+            }
+
+            @Override
+            public T deserialize(Object object) {
+                return InlineSerializer.this.deserialize(object.toString());
+            }
+
+            @Override
+            public boolean canDeserialize(Object object) {
+                return InlineSerializer.this.canDeserialize(object.toString());
+            }
+        };
+    }
+
 
     static <T> InlineSerializer<T> of(Function<T, String> serialize, Function<String, T> deserialize) {
         return new InlineSerializer<T>() {
@@ -50,6 +73,18 @@ public interface InlineSerializer<T> {
             }
         };
     }
+
+    InlineSerializer<String> RAW = new InlineSerializer<String>() {
+        @Override
+        public String deserialize(String s) {
+            return s;
+        }
+
+        @Override
+        public String serialize(String object) {
+            return object;
+        }
+    };
 
 }
 

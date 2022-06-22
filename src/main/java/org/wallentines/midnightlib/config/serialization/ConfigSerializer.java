@@ -1,12 +1,13 @@
 package org.wallentines.midnightlib.config.serialization;
 
+import org.wallentines.midnightlib.config.ConfigRegistry;
 import org.wallentines.midnightlib.config.ConfigSection;
 
 import java.util.*;
 import java.util.function.Function;
 
 @SuppressWarnings({"DuplicatedCode", "unused"})
-public interface ConfigSerializer<T> {
+public interface ConfigSerializer<T> extends Serializer<T, ConfigSection> {
 
     T deserialize(ConfigSection section);
 
@@ -22,42 +23,74 @@ public interface ConfigSerializer<T> {
         return val != null;
     }
 
+    default Serializer<T, Object> toRaw() {
+
+        return new Serializer<T, Object>() {
+            @Override
+            public Object serialize(T value) {
+                return ConfigSerializer.this.serialize(value);
+            }
+
+            @Override
+            public T deserialize(Object object) {
+
+                if(!(object instanceof ConfigSection)) throw new IllegalArgumentException("Object must be a ConfigSection!");
+                return ConfigSerializer.this.deserialize((ConfigSection) object);
+            }
+
+            @Override
+            public boolean canDeserialize(Object object) {
+                return object instanceof ConfigSection && ConfigSerializer.this.canDeserialize((ConfigSection) object);
+            }
+        };
+    }
+
+
     static <T, R> Entry<T, R> entry(Class<T> clazz, String key, Function<R, T> getter) {
-        return new ClassEntry<>(clazz, key, getter);
+
+        return new SingleEntry<>(key, new ClassSerializer<>(clazz, ConfigRegistry.INSTANCE), getter);
     }
 
     static <T, R> Entry<T, R> entry(ConfigSerializer<T> serializer, String key, Function<R, T> getter) {
-        return new SerializerEntry<>(serializer, key, getter);
+        return new SingleEntry<>(key, serializer.toRaw(), getter);
     }
 
     static <T, R> Entry<T, R> entry(InlineSerializer<T> serializer, String key, Function<R, T> getter) {
-        return new InlineSerializerEntry<>(serializer, key, getter);
+        return new SingleEntry<>(key, serializer.toRaw(), getter);
     }
-    static <T, R> Entry<? extends Collection<T>, R> listEntry(Class<T> clazz, String key, Function<R, Collection<T>> getter) {
+    static <T, R> ListEntry<T, R> listEntry(Class<T> clazz, String key, Function<R, Collection<T>> getter) {
 
-        return new ListEntry<>(key, clazz, null, getter);
-    }
-
-    static <T, R> Entry<? extends Collection<T>, R> listEntry(ConfigSerializer<T> serializer, String key, Function<R, Collection<T>> getter) {
-
-        return new ListEntry<>(key, null, obj -> serializer.deserialize((ConfigSection) obj), getter);
+        return new ListEntry<>(key, new ClassSerializer<>(clazz, ConfigRegistry.INSTANCE), getter);
     }
 
-    static <T, R> Entry<? extends Collection<T>, R> listEntry(InlineSerializer<T> serializer, String key, Function<R, Collection<T>> getter) {
+    static <T, R> ListEntry<T, R> listEntry(ConfigSerializer<T> serializer, String key, Function<R, Collection<T>> getter) {
 
-        return new ListEntry<>(key, null, obj -> serializer.deserialize(obj.toString()), getter);
+        return new ListEntry<>(key, serializer.toRaw(), getter);
     }
 
-    static <T, R> Entry<? extends Map<String, T>, R> mapEntry(Class<T> clazz, String key, Function<R, Map<String, T>> getter) {
-        return new MapEntry<>(key, clazz, null, getter);
+    static <T, R> ListEntry<T, R> listEntry(InlineSerializer<T> serializer, String key, Function<R, Collection<T>> getter) {
+
+        return new ListEntry<>(key, serializer.toRaw(), getter);
     }
 
-    static <T, R> Entry<? extends Map<String, T>, R> mapEntry(ConfigSerializer<T> serializer, String key, Function<R, Map<String, T>> getter) {
-        return new MapEntry<>(key, null, sec -> serializer.deserialize(sec.getSection(key)), getter);
+    static <T, R> MapEntry<String, T, R> mapEntry(Class<T> clazz, String key, Function<R, Map<String, T>> getter) {
+        return new MapEntry<>(key, InlineSerializer.RAW, new ClassSerializer<>(clazz, ConfigRegistry.INSTANCE), getter);
     }
 
-    static <T, R> Entry<? extends Map<String, T>, R> mapEntry(InlineSerializer<T> serializer, String key, Function<R, Map<String, T>> getter) {
-        return new MapEntry<>(key, null, sec -> serializer.deserialize(sec.getString(key)), getter);
+    static <T, R> MapEntry<String, T, R> mapEntry(ConfigSerializer<T> serializer, String key, Function<R, Map<String, T>> getter) {
+        return new MapEntry<>(key, InlineSerializer.RAW, serializer.toRaw(), getter);
+    }
+
+    static <T, R> MapEntry<String, T, R> mapEntry(InlineSerializer<T> serializer, String key, Function<R, Map<String, T>> getter) {
+        return new MapEntry<>(key, InlineSerializer.RAW, serializer.toRaw(), getter);
+    }
+
+    static <K, V, R> MapEntry<K, V, R> mapEntry(InlineSerializer<K> keySerializer, ConfigSerializer<V> valueSerializer, String key, Function<R, Map<K, V>> getter) {
+        return new MapEntry<>(key, keySerializer, valueSerializer.toRaw(), getter);
+    }
+
+    static <K, V, R> MapEntry<K, V, R> mapEntry(InlineSerializer<K> keySerializer, InlineSerializer<V> valueSerializer, String key, Function<R, Map<K, V>> getter) {
+        return new MapEntry<>(key, keySerializer, valueSerializer.toRaw(), getter);
     }
 
     static <T> ConfigSerializer<T> of(Function<T, ConfigSection> serialize, Function<ConfigSection, T> deserialize) {
@@ -96,7 +129,7 @@ public interface ConfigSerializer<T> {
     static <T, R> ConfigSerializer<R> create(Entry<T, R> ent, Functions.Function1<T, R> func) {
 
         return of(
-                obj -> new ConfigSection().with(ent.getKey(), ent.getOrDefault(obj)),
+                obj -> new ConfigSection().with(ent.getKey(), ent.serialize(obj)),
                 sec -> func.create(ent.parse(sec)),
                 ent::isValid);
     }
@@ -105,8 +138,8 @@ public interface ConfigSerializer<T> {
 
         return of(
                 obj -> new ConfigSection()
-                        .with(ent.getKey(), ent.getOrDefault(obj))
-                        .with(ent2.getKey(), ent2.getOrDefault(obj)),
+                        .with(ent.getKey(), ent.serialize(obj))
+                        .with(ent2.getKey(), ent2.serialize(obj)),
                 sec -> func.create(
                         ent.parse(sec),
                         ent2.parse(sec)),
@@ -118,9 +151,9 @@ public interface ConfigSerializer<T> {
 
         return of(
                 obj -> new ConfigSection()
-                        .with(ent.getKey(), ent.getOrDefault(obj))
-                        .with(ent2.getKey(), ent2.getOrDefault(obj))
-                        .with(ent3.getKey(), ent3.getOrDefault(obj)),
+                        .with(ent.getKey(), ent.serialize(obj))
+                        .with(ent2.getKey(), ent2.serialize(obj))
+                        .with(ent3.getKey(), ent3.serialize(obj)),
                 sec -> func.create(
                         ent.parse(sec),
                         ent2.parse(sec),
@@ -134,10 +167,10 @@ public interface ConfigSerializer<T> {
 
         return of(
                 obj -> new ConfigSection()
-                        .with(ent.getKey(), ent.getOrDefault(obj))
-                        .with(ent2.getKey(), ent2.getOrDefault(obj))
-                        .with(ent3.getKey(), ent3.getOrDefault(obj))
-                        .with(ent4.getKey(), ent4.getOrDefault(obj)),
+                        .with(ent.getKey(), ent.serialize(obj))
+                        .with(ent2.getKey(), ent2.serialize(obj))
+                        .with(ent3.getKey(), ent3.serialize(obj))
+                        .with(ent4.getKey(), ent4.serialize(obj)),
                 sec -> func.create(
                         ent.parse(sec),
                         ent2.parse(sec),
@@ -159,11 +192,11 @@ public interface ConfigSerializer<T> {
 
         return of(
                 obj -> new ConfigSection()
-                        .with(ent.getKey(), ent.getOrDefault(obj))
-                        .with(ent2.getKey(), ent2.getOrDefault(obj))
-                        .with(ent3.getKey(), ent3.getOrDefault(obj))
-                        .with(ent4.getKey(), ent4.getOrDefault(obj))
-                        .with(ent5.getKey(), ent5.getOrDefault(obj)),
+                        .with(ent.getKey(), ent.serialize(obj))
+                        .with(ent2.getKey(), ent2.serialize(obj))
+                        .with(ent3.getKey(), ent3.serialize(obj))
+                        .with(ent4.getKey(), ent4.serialize(obj))
+                        .with(ent5.getKey(), ent5.serialize(obj)),
                 sec -> func.create(
                         ent.parse(sec),
                         ent2.parse(sec),
@@ -189,12 +222,12 @@ public interface ConfigSerializer<T> {
 
         return of(
                 obj -> new ConfigSection()
-                        .with(ent.getKey(), ent.getOrDefault(obj))
-                        .with(ent2.getKey(), ent2.getOrDefault(obj))
-                        .with(ent3.getKey(), ent3.getOrDefault(obj))
-                        .with(ent4.getKey(), ent4.getOrDefault(obj))
-                        .with(ent5.getKey(), ent5.getOrDefault(obj))
-                        .with(ent6.getKey(), ent6.getOrDefault(obj)),
+                        .with(ent.getKey(), ent.serialize(obj))
+                        .with(ent2.getKey(), ent2.serialize(obj))
+                        .with(ent3.getKey(), ent3.serialize(obj))
+                        .with(ent4.getKey(), ent4.serialize(obj))
+                        .with(ent5.getKey(), ent5.serialize(obj))
+                        .with(ent6.getKey(), ent6.serialize(obj)),
                 sec -> func.create(
                         ent.parse(sec),
                         ent2.parse(sec),
@@ -222,13 +255,13 @@ public interface ConfigSerializer<T> {
 
         return of(
                 obj -> new ConfigSection()
-                        .with(ent.getKey(), ent.getOrDefault(obj))
-                        .with(ent2.getKey(), ent2.getOrDefault(obj))
-                        .with(ent3.getKey(), ent3.getOrDefault(obj))
-                        .with(ent4.getKey(), ent4.getOrDefault(obj))
-                        .with(ent5.getKey(), ent5.getOrDefault(obj))
-                        .with(ent6.getKey(), ent6.getOrDefault(obj))
-                        .with(ent7.getKey(), ent7.getOrDefault(obj)),
+                        .with(ent.getKey(), ent.serialize(obj))
+                        .with(ent2.getKey(), ent2.serialize(obj))
+                        .with(ent3.getKey(), ent3.serialize(obj))
+                        .with(ent4.getKey(), ent4.serialize(obj))
+                        .with(ent5.getKey(), ent5.serialize(obj))
+                        .with(ent6.getKey(), ent6.serialize(obj))
+                        .with(ent7.getKey(), ent7.serialize(obj)),
                 sec -> func.create(
                         ent.parse(sec),
                         ent2.parse(sec),
@@ -260,14 +293,14 @@ public interface ConfigSerializer<T> {
 
         return of(
                 obj -> new ConfigSection()
-                        .with(ent.getKey(), ent.getOrDefault(obj))
-                        .with(ent2.getKey(), ent2.getOrDefault(obj))
-                        .with(ent3.getKey(), ent3.getOrDefault(obj))
-                        .with(ent4.getKey(), ent4.getOrDefault(obj))
-                        .with(ent5.getKey(), ent5.getOrDefault(obj))
-                        .with(ent6.getKey(), ent6.getOrDefault(obj))
-                        .with(ent7.getKey(), ent7.getOrDefault(obj))
-                        .with(ent8.getKey(), ent8.getOrDefault(obj)),
+                        .with(ent.getKey(), ent.serialize(obj))
+                        .with(ent2.getKey(), ent2.serialize(obj))
+                        .with(ent3.getKey(), ent3.serialize(obj))
+                        .with(ent4.getKey(), ent4.serialize(obj))
+                        .with(ent5.getKey(), ent5.serialize(obj))
+                        .with(ent6.getKey(), ent6.serialize(obj))
+                        .with(ent7.getKey(), ent7.serialize(obj))
+                        .with(ent8.getKey(), ent8.serialize(obj)),
                 sec -> func.create(
                         ent.parse(sec),
                         ent2.parse(sec),
@@ -302,15 +335,15 @@ public interface ConfigSerializer<T> {
 
         return of(
                 obj -> new ConfigSection()
-                        .with(ent.getKey(), ent.getOrDefault(obj))
-                        .with(ent2.getKey(), ent2.getOrDefault(obj))
-                        .with(ent3.getKey(), ent3.getOrDefault(obj))
-                        .with(ent4.getKey(), ent4.getOrDefault(obj))
-                        .with(ent5.getKey(), ent5.getOrDefault(obj))
-                        .with(ent6.getKey(), ent6.getOrDefault(obj))
-                        .with(ent7.getKey(), ent7.getOrDefault(obj))
-                        .with(ent8.getKey(), ent8.getOrDefault(obj))
-                        .with(ent9.getKey(), ent9.getOrDefault(obj)),
+                        .with(ent.getKey(), ent.serialize(obj))
+                        .with(ent2.getKey(), ent2.serialize(obj))
+                        .with(ent3.getKey(), ent3.serialize(obj))
+                        .with(ent4.getKey(), ent4.serialize(obj))
+                        .with(ent5.getKey(), ent5.serialize(obj))
+                        .with(ent6.getKey(), ent6.serialize(obj))
+                        .with(ent7.getKey(), ent7.serialize(obj))
+                        .with(ent8.getKey(), ent8.serialize(obj))
+                        .with(ent9.getKey(), ent9.serialize(obj)),
                 sec -> func.create(
                         ent.parse(sec),
                         ent2.parse(sec),
@@ -348,16 +381,16 @@ public interface ConfigSerializer<T> {
 
         return of(
                 obj -> new ConfigSection()
-                        .with(ent.getKey(), ent.getOrDefault(obj))
-                        .with(ent2.getKey(), ent2.getOrDefault(obj))
-                        .with(ent3.getKey(), ent3.getOrDefault(obj))
-                        .with(ent4.getKey(), ent4.getOrDefault(obj))
-                        .with(ent5.getKey(), ent5.getOrDefault(obj))
-                        .with(ent6.getKey(), ent6.getOrDefault(obj))
-                        .with(ent7.getKey(), ent7.getOrDefault(obj))
-                        .with(ent8.getKey(), ent8.getOrDefault(obj))
-                        .with(ent9.getKey(), ent9.getOrDefault(obj))
-                        .with(ent10.getKey(), ent10.getOrDefault(obj)),
+                        .with(ent.getKey(), ent.serialize(obj))
+                        .with(ent2.getKey(), ent2.serialize(obj))
+                        .with(ent3.getKey(), ent3.serialize(obj))
+                        .with(ent4.getKey(), ent4.serialize(obj))
+                        .with(ent5.getKey(), ent5.serialize(obj))
+                        .with(ent6.getKey(), ent6.serialize(obj))
+                        .with(ent7.getKey(), ent7.serialize(obj))
+                        .with(ent8.getKey(), ent8.serialize(obj))
+                        .with(ent9.getKey(), ent9.serialize(obj))
+                        .with(ent10.getKey(), ent10.serialize(obj)),
                 sec -> func.create(
                         ent.parse(sec),
                         ent2.parse(sec),
@@ -398,17 +431,17 @@ public interface ConfigSerializer<T> {
 
         return of(
                 obj -> new ConfigSection()
-                        .with(ent.getKey(), ent.getOrDefault(obj))
-                        .with(ent2.getKey(), ent2.getOrDefault(obj))
-                        .with(ent3.getKey(), ent3.getOrDefault(obj))
-                        .with(ent4.getKey(), ent4.getOrDefault(obj))
-                        .with(ent5.getKey(), ent5.getOrDefault(obj))
-                        .with(ent6.getKey(), ent6.getOrDefault(obj))
-                        .with(ent7.getKey(), ent7.getOrDefault(obj))
-                        .with(ent8.getKey(), ent8.getOrDefault(obj))
-                        .with(ent9.getKey(), ent9.getOrDefault(obj))
-                        .with(ent10.getKey(), ent10.getOrDefault(obj))
-                        .with(ent11.getKey(), ent11.getOrDefault(obj)),
+                        .with(ent.getKey(), ent.serialize(obj))
+                        .with(ent2.getKey(), ent2.serialize(obj))
+                        .with(ent3.getKey(), ent3.serialize(obj))
+                        .with(ent4.getKey(), ent4.serialize(obj))
+                        .with(ent5.getKey(), ent5.serialize(obj))
+                        .with(ent6.getKey(), ent6.serialize(obj))
+                        .with(ent7.getKey(), ent7.serialize(obj))
+                        .with(ent8.getKey(), ent8.serialize(obj))
+                        .with(ent9.getKey(), ent9.serialize(obj))
+                        .with(ent10.getKey(), ent10.serialize(obj))
+                        .with(ent11.getKey(), ent11.serialize(obj)),
                 sec -> func.create(
                         ent.parse(sec),
                         ent2.parse(sec),
@@ -452,18 +485,18 @@ public interface ConfigSerializer<T> {
 
         return of(
                 obj -> new ConfigSection()
-                        .with(ent.getKey(), ent.getOrDefault(obj))
-                        .with(ent2.getKey(), ent2.getOrDefault(obj))
-                        .with(ent3.getKey(), ent3.getOrDefault(obj))
-                        .with(ent4.getKey(), ent4.getOrDefault(obj))
-                        .with(ent5.getKey(), ent5.getOrDefault(obj))
-                        .with(ent6.getKey(), ent6.getOrDefault(obj))
-                        .with(ent7.getKey(), ent7.getOrDefault(obj))
-                        .with(ent8.getKey(), ent8.getOrDefault(obj))
-                        .with(ent9.getKey(), ent9.getOrDefault(obj))
-                        .with(ent10.getKey(), ent10.getOrDefault(obj))
-                        .with(ent11.getKey(), ent11.getOrDefault(obj))
-                        .with(ent12.getKey(), ent12.getOrDefault(obj)),
+                        .with(ent.getKey(), ent.serialize(obj))
+                        .with(ent2.getKey(), ent2.serialize(obj))
+                        .with(ent3.getKey(), ent3.serialize(obj))
+                        .with(ent4.getKey(), ent4.serialize(obj))
+                        .with(ent5.getKey(), ent5.serialize(obj))
+                        .with(ent6.getKey(), ent6.serialize(obj))
+                        .with(ent7.getKey(), ent7.serialize(obj))
+                        .with(ent8.getKey(), ent8.serialize(obj))
+                        .with(ent9.getKey(), ent9.serialize(obj))
+                        .with(ent10.getKey(), ent10.serialize(obj))
+                        .with(ent11.getKey(), ent11.serialize(obj))
+                        .with(ent12.getKey(), ent12.serialize(obj)),
                 sec -> func.create(
                         ent.parse(sec),
                         ent2.parse(sec),
@@ -510,19 +543,19 @@ public interface ConfigSerializer<T> {
 
         return of(
                 obj -> new ConfigSection()
-                        .with(ent.getKey(), ent.getOrDefault(obj))
-                        .with(ent2.getKey(), ent2.getOrDefault(obj))
-                        .with(ent3.getKey(), ent3.getOrDefault(obj))
-                        .with(ent4.getKey(), ent4.getOrDefault(obj))
-                        .with(ent5.getKey(), ent5.getOrDefault(obj))
-                        .with(ent6.getKey(), ent6.getOrDefault(obj))
-                        .with(ent7.getKey(), ent7.getOrDefault(obj))
-                        .with(ent8.getKey(), ent8.getOrDefault(obj))
-                        .with(ent9.getKey(), ent9.getOrDefault(obj))
-                        .with(ent10.getKey(), ent10.getOrDefault(obj))
-                        .with(ent11.getKey(), ent11.getOrDefault(obj))
-                        .with(ent12.getKey(), ent12.getOrDefault(obj))
-                        .with(ent13.getKey(), ent13.getOrDefault(obj)),
+                        .with(ent.getKey(), ent.serialize(obj))
+                        .with(ent2.getKey(), ent2.serialize(obj))
+                        .with(ent3.getKey(), ent3.serialize(obj))
+                        .with(ent4.getKey(), ent4.serialize(obj))
+                        .with(ent5.getKey(), ent5.serialize(obj))
+                        .with(ent6.getKey(), ent6.serialize(obj))
+                        .with(ent7.getKey(), ent7.serialize(obj))
+                        .with(ent8.getKey(), ent8.serialize(obj))
+                        .with(ent9.getKey(), ent9.serialize(obj))
+                        .with(ent10.getKey(), ent10.serialize(obj))
+                        .with(ent11.getKey(), ent11.serialize(obj))
+                        .with(ent12.getKey(), ent12.serialize(obj))
+                        .with(ent13.getKey(), ent13.serialize(obj)),
                 sec -> func.create(
                         ent.parse(sec),
                         ent2.parse(sec),
@@ -572,20 +605,20 @@ public interface ConfigSerializer<T> {
 
         return of(
                 obj -> new ConfigSection()
-                        .with(ent.getKey(), ent.getOrDefault(obj))
-                        .with(ent2.getKey(), ent2.getOrDefault(obj))
-                        .with(ent3.getKey(), ent3.getOrDefault(obj))
-                        .with(ent4.getKey(), ent4.getOrDefault(obj))
-                        .with(ent5.getKey(), ent5.getOrDefault(obj))
-                        .with(ent6.getKey(), ent6.getOrDefault(obj))
-                        .with(ent7.getKey(), ent7.getOrDefault(obj))
-                        .with(ent8.getKey(), ent8.getOrDefault(obj))
-                        .with(ent9.getKey(), ent9.getOrDefault(obj))
-                        .with(ent10.getKey(), ent10.getOrDefault(obj))
-                        .with(ent11.getKey(), ent11.getOrDefault(obj))
-                        .with(ent12.getKey(), ent12.getOrDefault(obj))
-                        .with(ent13.getKey(), ent13.getOrDefault(obj))
-                        .with(ent14.getKey(), ent14.getOrDefault(obj)),
+                        .with(ent.getKey(), ent.serialize(obj))
+                        .with(ent2.getKey(), ent2.serialize(obj))
+                        .with(ent3.getKey(), ent3.serialize(obj))
+                        .with(ent4.getKey(), ent4.serialize(obj))
+                        .with(ent5.getKey(), ent5.serialize(obj))
+                        .with(ent6.getKey(), ent6.serialize(obj))
+                        .with(ent7.getKey(), ent7.serialize(obj))
+                        .with(ent8.getKey(), ent8.serialize(obj))
+                        .with(ent9.getKey(), ent9.serialize(obj))
+                        .with(ent10.getKey(), ent10.serialize(obj))
+                        .with(ent11.getKey(), ent11.serialize(obj))
+                        .with(ent12.getKey(), ent12.serialize(obj))
+                        .with(ent13.getKey(), ent13.serialize(obj))
+                        .with(ent14.getKey(), ent14.serialize(obj)),
                 sec -> func.create(
                         ent.parse(sec),
                         ent2.parse(sec),
@@ -639,21 +672,21 @@ public interface ConfigSerializer<T> {
 
         return of(
                 obj -> new ConfigSection()
-                        .with(ent.getKey(), ent.getOrDefault(obj))
-                        .with(ent2.getKey(), ent2.getOrDefault(obj))
-                        .with(ent3.getKey(), ent3.getOrDefault(obj))
-                        .with(ent4.getKey(), ent4.getOrDefault(obj))
-                        .with(ent5.getKey(), ent5.getOrDefault(obj))
-                        .with(ent6.getKey(), ent6.getOrDefault(obj))
-                        .with(ent7.getKey(), ent7.getOrDefault(obj))
-                        .with(ent8.getKey(), ent8.getOrDefault(obj))
-                        .with(ent9.getKey(), ent9.getOrDefault(obj))
-                        .with(ent10.getKey(), ent10.getOrDefault(obj))
-                        .with(ent11.getKey(), ent11.getOrDefault(obj))
-                        .with(ent12.getKey(), ent12.getOrDefault(obj))
-                        .with(ent13.getKey(), ent13.getOrDefault(obj))
-                        .with(ent14.getKey(), ent14.getOrDefault(obj))
-                        .with(ent15.getKey(), ent15.getOrDefault(obj)),
+                        .with(ent.getKey(), ent.serialize(obj))
+                        .with(ent2.getKey(), ent2.serialize(obj))
+                        .with(ent3.getKey(), ent3.serialize(obj))
+                        .with(ent4.getKey(), ent4.serialize(obj))
+                        .with(ent5.getKey(), ent5.serialize(obj))
+                        .with(ent6.getKey(), ent6.serialize(obj))
+                        .with(ent7.getKey(), ent7.serialize(obj))
+                        .with(ent8.getKey(), ent8.serialize(obj))
+                        .with(ent9.getKey(), ent9.serialize(obj))
+                        .with(ent10.getKey(), ent10.serialize(obj))
+                        .with(ent11.getKey(), ent11.serialize(obj))
+                        .with(ent12.getKey(), ent12.serialize(obj))
+                        .with(ent13.getKey(), ent13.serialize(obj))
+                        .with(ent14.getKey(), ent14.serialize(obj))
+                        .with(ent15.getKey(), ent15.serialize(obj)),
                 sec -> func.create(
                         ent.parse(sec),
                         ent2.parse(sec),
@@ -709,22 +742,22 @@ public interface ConfigSerializer<T> {
 
         return of(
                 obj -> new ConfigSection()
-                        .with(ent.getKey(), ent.getOrDefault(obj))
-                        .with(ent2.getKey(), ent2.getOrDefault(obj))
-                        .with(ent3.getKey(), ent3.getOrDefault(obj))
-                        .with(ent4.getKey(), ent4.getOrDefault(obj))
-                        .with(ent5.getKey(), ent5.getOrDefault(obj))
-                        .with(ent6.getKey(), ent6.getOrDefault(obj))
-                        .with(ent7.getKey(), ent7.getOrDefault(obj))
-                        .with(ent8.getKey(), ent8.getOrDefault(obj))
-                        .with(ent9.getKey(), ent9.getOrDefault(obj))
-                        .with(ent10.getKey(), ent10.getOrDefault(obj))
-                        .with(ent11.getKey(), ent11.getOrDefault(obj))
-                        .with(ent12.getKey(), ent12.getOrDefault(obj))
-                        .with(ent13.getKey(), ent13.getOrDefault(obj))
-                        .with(ent14.getKey(), ent14.getOrDefault(obj))
-                        .with(ent15.getKey(), ent15.getOrDefault(obj))
-                        .with(ent16.getKey(), ent16.getOrDefault(obj)),
+                        .with(ent.getKey(), ent.serialize(obj))
+                        .with(ent2.getKey(), ent2.serialize(obj))
+                        .with(ent3.getKey(), ent3.serialize(obj))
+                        .with(ent4.getKey(), ent4.serialize(obj))
+                        .with(ent5.getKey(), ent5.serialize(obj))
+                        .with(ent6.getKey(), ent6.serialize(obj))
+                        .with(ent7.getKey(), ent7.serialize(obj))
+                        .with(ent8.getKey(), ent8.serialize(obj))
+                        .with(ent9.getKey(), ent9.serialize(obj))
+                        .with(ent10.getKey(), ent10.serialize(obj))
+                        .with(ent11.getKey(), ent11.serialize(obj))
+                        .with(ent12.getKey(), ent12.serialize(obj))
+                        .with(ent13.getKey(), ent13.serialize(obj))
+                        .with(ent14.getKey(), ent14.serialize(obj))
+                        .with(ent15.getKey(), ent15.serialize(obj))
+                        .with(ent16.getKey(), ent16.serialize(obj)),
                 sec -> func.create(
                         ent.parse(sec),
                         ent2.parse(sec),
@@ -770,20 +803,22 @@ public interface ConfigSerializer<T> {
         T getOrDefault(C value);
         T parse(ConfigSection section);
         boolean isValid(ConfigSection sec);
+        Object serialize(C value);
     }
 
-    class ClassEntry<T, C> implements Entry<T, C> {
+    class SingleEntry<T, C> implements Entry<T, C> {
 
-        private final Class<T> clazz;
         private final String key;
-        private final Function<C, T> getter;
-        private T defaultValue;
 
+        private final Serializer<T, Object> serializer;
+        private final Function<C, T> getter;
+
+        private T defaultValue;
         private boolean isOptional;
 
-        private ClassEntry(Class<T> clazz, String key, Function<C, T> getter) {
-            this.clazz = clazz;
+        public SingleEntry(String key, Serializer<T, Object> serializer, Function<C, T> getter) {
             this.key = key;
+            this.serializer = serializer;
             this.getter = getter;
         }
 
@@ -793,14 +828,16 @@ public interface ConfigSerializer<T> {
         }
 
         @Override
-        public Entry<T, C> orDefault(T defaultValue) {
+        public SingleEntry<T, C> orDefault(T defaultValue) {
+
             this.defaultValue = defaultValue;
             this.isOptional = true;
             return this;
         }
 
         @Override
-        public Entry<T, C> optional() {
+        public SingleEntry<T, C> optional() {
+
             this.isOptional = true;
             return this;
         }
@@ -815,146 +852,42 @@ public interface ConfigSerializer<T> {
         @Override
         public T parse(ConfigSection section) {
 
-            if(isOptional) {
-                return section.getOrDefault(key, defaultValue, clazz);
+            Object o = section.get(key);
+            if(o == null && isOptional) {
+                return defaultValue;
             }
-            return section.get(key, clazz);
+            return serializer.deserialize(o);
         }
 
         @Override
         public boolean isValid(ConfigSection sec) {
 
-            return isOptional || sec.has(key, clazz);
+            if(isOptional) return true;
+
+            Object o = sec.get(key);
+            return serializer.canDeserialize(o);
         }
 
+        @Override
+        public Object serialize(C value) {
+
+            return serializer.serialize(getOrDefault(value));
+        }
     }
 
-
-    class SerializerEntry<T, C> implements Entry<T, C>{
-
-        private final ConfigSerializer<T> serializer;
-        private final String key;
-        private final Function<C, T> getter;
-        private T defaultValue;
-
-        private boolean isOptional;
-
-        private SerializerEntry(ConfigSerializer<T> serializer, String key, Function<C, T> getter) {
-            this.serializer = serializer;
-            this.key = key;
-            this.getter = getter;
-        }
-
-        @Override
-        public String getKey() {
-            return key;
-        }
-
-        @Override
-        public Entry<T, C> orDefault(T defaultValue) {
-            this.defaultValue = defaultValue;
-            this.isOptional = true;
-            return this;
-        }
-
-        @Override
-        public Entry<T, C> optional() {
-            this.isOptional = true;
-            return this;
-        }
-
-        @Override
-        public T getOrDefault(C value) {
-
-            T val = getter.apply(value);
-            return val == null ? defaultValue : val;
-        }
-
-        @Override
-        public T parse(ConfigSection section) {
-
-            if(isOptional && !section.has(key, ConfigSection.class)) return defaultValue;
-            return serializer.deserialize(section.getSection(key));
-        }
-
-        @Override
-        public boolean isValid(ConfigSection sec) {
-
-            return isOptional || sec.has(key, ConfigSection.class) && serializer.canDeserialize(sec.getSection(key));
-        }
-
-    }
-
-    class InlineSerializerEntry<T, C> implements Entry<T, C>{
-
-        private final InlineSerializer<T> serializer;
-        private final String key;
-        private final Function<C, T> getter;
-        private T defaultValue;
-
-        private boolean isOptional;
-
-        private InlineSerializerEntry(InlineSerializer<T> serializer, String key, Function<C, T> getter) {
-            this.serializer = serializer;
-            this.key = key;
-            this.getter = getter;
-        }
-
-        @Override
-        public String getKey() {
-            return key;
-        }
-
-        @Override
-        public Entry<T, C> orDefault(T defaultValue) {
-            this.defaultValue = defaultValue;
-            this.isOptional = true;
-            return this;
-        }
-
-        @Override
-        public Entry<T, C> optional() {
-            this.isOptional = true;
-            return this;
-        }
-
-        @Override
-        public T getOrDefault(C value) {
-
-            T val = getter.apply(value);
-            return val == null ? defaultValue : val;
-        }
-
-        @Override
-        public T parse(ConfigSection section) {
-
-            if(isOptional && !section.has(key)) return defaultValue;
-            return serializer.deserialize(section.getString(key));
-        }
-
-        @Override
-        public boolean isValid(ConfigSection sec) {
-
-            return isOptional || sec.has(key) && serializer.canDeserialize(sec.getString(key));
-        }
-
-    }
-
-    class ListEntry<T, C> implements Entry<Collection<T>, C>{
+    class ListEntry<T, C> implements Entry<Collection<T>, C> {
 
         private final String key;
 
-        private final Class<T> clazz;
-        private final Function<Object, T> parser;
+        private final Serializer<T, Object> serializer;
         private final Function<C, Collection<T>> getter;
         private Collection<T> defaultValue = new ArrayList<>();
 
         private boolean isOptional;
 
-        private ListEntry(String key, Class<T> clazz, Function<Object, T> parser, Function<C, Collection<T>> getter) {
+        private ListEntry(String key, Serializer<T, Object> serializer, Function<C, Collection<T>> getter) {
             this.key = key;
-            this.clazz = clazz;
-            this.parser = parser;
+            this.serializer = serializer;
             this.getter = getter;
         }
 
@@ -964,14 +897,14 @@ public interface ConfigSerializer<T> {
         }
 
         @Override
-        public Entry<Collection<T>, C> orDefault(Collection<T> defaultValue) {
+        public ListEntry<T, C> orDefault(Collection<T> defaultValue) {
             this.defaultValue = defaultValue;
             this.isOptional = true;
             return this;
         }
 
         @Override
-        public Entry<Collection<T>, C> optional() {
+        public ListEntry<T, C> optional() {
             this.isOptional = true;
             return this;
         }
@@ -988,12 +921,8 @@ public interface ConfigSerializer<T> {
 
             if(isOptional && !section.has(key, List.class)) return defaultValue;
             List<T> out = new ArrayList<>();
-            if(parser == null) {
-                out.addAll(section.getList(key, clazz));
-            } else {
-                for (Object o : section.getList(key)) {
-                    out.add(parser.apply(o));
-                }
+            for (Object o : section.getList(key)) {
+                out.add(serializer.deserialize(o));
             }
             return out;
         }
@@ -1003,23 +932,37 @@ public interface ConfigSerializer<T> {
 
             return isOptional || sec.has(key, List.class);
         }
+
+        @Override
+        public Object serialize(C value) {
+
+            Collection<T> val = getOrDefault(value);
+            if(val == null) return null;
+
+            List<Object> out = new ArrayList<>();
+            for(T t : val) {
+                out.add(serializer.serialize(t));
+            }
+
+            return out;
+        }
     }
 
-    class MapEntry<T, C> implements Entry<Map<String, T>, C> {
+    class MapEntry<K, V, C> implements Entry<Map<K, V>, C> {
         private final String key;
 
-        private final Class<T> clazz;
-        private final Function<ConfigSection, T> parser;
-        private final Function<C, Map<String, T>> getter;
-        private Map<String, T> defaultValue = new HashMap<>();
+        private final InlineSerializer<K> keySerializer;
+        private final Serializer<V, Object> valueSerializer;
+        private final Function<C, Map<K, V>> getter;
+        private Map<K, V> defaultValue = new HashMap<>();
 
 
         private boolean isOptional;
 
-        private MapEntry(String key, Class<T> clazz, Function<ConfigSection, T> parser, Function<C, Map<String, T>> getter) {
+        private MapEntry(String key, InlineSerializer<K> keySerializer, Serializer<V, Object> valueSerializer, Function<C, Map<K, V>> getter) {
             this.key = key;
-            this.clazz = clazz;
-            this.parser = parser;
+            this.keySerializer = keySerializer;
+            this.valueSerializer = valueSerializer;
             this.getter = getter;
         }
 
@@ -1028,36 +971,38 @@ public interface ConfigSerializer<T> {
             return key;
         }
 
-        @Override
-        public Entry<Map<String, T>, C> orDefault(Map<String, T> defaultValue) {
+        public MapEntry<K, V, C> orDefault(Map<K, V> defaultValue) {
             this.defaultValue = defaultValue;
             this.isOptional = true;
             return this;
         }
 
         @Override
-        public Entry<Map<String, T>, C> optional() {
+        public MapEntry<K, V, C> optional() {
             this.isOptional = true;
             return this;
         }
 
         @Override
-        public Map<String, T> getOrDefault(C value) {
+        public Map<K, V> getOrDefault(C value) {
 
-            Map<String, T> val = getter.apply(value);
-            return val == null ? defaultValue : val;
+            Map<K, V> val = getter.apply(value);
+            if(val == null) return defaultValue;
+
+            return val;
         }
 
         @Override
-        public Map<String, T> parse(ConfigSection section) {
+        public Map<K, V> parse(ConfigSection section) {
 
             if(isOptional && !section.has(key, ConfigSection.class)) return defaultValue;
 
             ConfigSection sec = section.getSection(key);
-            HashMap<String, T> out = new HashMap<>();
+            HashMap<K, V> out = new HashMap<>();
             for(String s : sec.getKeys()) {
-                out.put(s, parser == null ? sec.get(s, clazz) : parser.apply(sec));
+                out.put(keySerializer.deserialize(s), valueSerializer.deserialize(sec.get(s)));
             }
+
             return out;
         }
 
@@ -1067,6 +1012,19 @@ public interface ConfigSerializer<T> {
             return isOptional || sec.has(key, ConfigSection.class);
         }
 
+        @Override
+        public Object serialize(C value) {
+
+            Map<K, V> val = getOrDefault(value);
+            if(val == null) return null;
+
+            Map<String, Object> out = new HashMap<>();
+            for(Map.Entry<K, V> ent : val.entrySet()) {
+                out.put(keySerializer.serialize(ent.getKey()), valueSerializer.serialize(ent.getValue()));
+            }
+
+            return out;
+        }
     }
 }
 
