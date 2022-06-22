@@ -25,7 +25,7 @@ public interface InlineSerializer<T> extends Serializer<T, String> {
         return new Serializer<T, Object>() {
             @Override
             public Object serialize(T value) {
-                return InlineSerializer.this.serialize(value);
+                return value == null ? null : InlineSerializer.this.serialize(value);
             }
 
             @Override

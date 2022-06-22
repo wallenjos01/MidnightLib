@@ -21,6 +21,8 @@ public class ClassSerializer<T> implements Serializer<T, Object> {
     @Override
     public Object serialize(T value) {
 
+        if(value == null) return null;
+
         ConfigSerializer<T> ser = registry.getSerializer(clazz, ConfigRegistry.Direction.SERIALIZE);
         if(ser != null) return ser.serialize(value);
 
@@ -30,11 +32,10 @@ public class ClassSerializer<T> implements Serializer<T, Object> {
         return value;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public T deserialize(Object object) {
 
-        if(object.getClass() == clazz || clazz.isAssignableFrom(object.getClass())) return (T) object;
+        if(object.getClass() == clazz || clazz.isAssignableFrom(object.getClass())) return clazz.cast(object);
 
         if(object instanceof ConfigSection) {
             ConfigSerializer<T> ser = registry.getSerializer(clazz, ConfigRegistry.Direction.DESERIALIZE);

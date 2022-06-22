@@ -2,6 +2,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.wallentines.midnightlib.config.ConfigSection;
 import org.wallentines.midnightlib.config.serialization.ConfigSerializer;
+import org.wallentines.midnightlib.config.serialization.PrimitiveSerializers;
 
 public class TestSerializer {
 
@@ -40,8 +41,8 @@ public class TestSerializer {
 
         ConfigSerializer<TestClass> config =
                 ConfigSerializer.create(
-                        ConfigSerializer.entry(String.class,"str", TestClass::getStringMember),
-                        ConfigSerializer.entry(Integer.class,"int", TestClass::getIntMember),
+                        ConfigSerializer.entry(PrimitiveSerializers.STRING,"str", TestClass::getStringMember),
+                        ConfigSerializer.entry(PrimitiveSerializers.INT, "int", TestClass::getIntMember),
                         TestClass::new);
 
 

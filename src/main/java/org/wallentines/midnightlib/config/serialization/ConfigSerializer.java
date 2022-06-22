@@ -1,5 +1,7 @@
 package org.wallentines.midnightlib.config.serialization;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.wallentines.midnightlib.config.ConfigRegistry;
 import org.wallentines.midnightlib.config.ConfigSection;
 
@@ -8,6 +10,8 @@ import java.util.function.Function;
 
 @SuppressWarnings({"DuplicatedCode", "unused"})
 public interface ConfigSerializer<T> extends Serializer<T, ConfigSection> {
+
+    Logger LOGGER = LogManager.getLogger("ConfigSerializer");
 
     T deserialize(ConfigSection section);
 
@@ -28,7 +32,7 @@ public interface ConfigSerializer<T> extends Serializer<T, ConfigSection> {
         return new Serializer<T, Object>() {
             @Override
             public Object serialize(T value) {
-                return ConfigSerializer.this.serialize(value);
+                return value == null ? null : ConfigSerializer.this.serialize(value);
             }
 
             @Override
@@ -47,7 +51,6 @@ public interface ConfigSerializer<T> extends Serializer<T, ConfigSection> {
 
 
     static <T, R> Entry<T, R> entry(Class<T> clazz, String key, Function<R, T> getter) {
-
         return new SingleEntry<>(key, new ClassSerializer<>(clazz, ConfigRegistry.INSTANCE), getter);
     }
 
@@ -58,19 +61,26 @@ public interface ConfigSerializer<T> extends Serializer<T, ConfigSection> {
     static <T, R> Entry<T, R> entry(InlineSerializer<T> serializer, String key, Function<R, T> getter) {
         return new SingleEntry<>(key, serializer.toRaw(), getter);
     }
-    static <T, R> ListEntry<T, R> listEntry(Class<T> clazz, String key, Function<R, Collection<T>> getter) {
 
+    static <T, R> Entry<T, R> entry(Serializer<T, Object> serializer, String key, Function<R, T> getter) {
+        return new SingleEntry<>(key, serializer, getter);
+    }
+
+
+    static <T, R> ListEntry<T, R> listEntry(Class<T> clazz, String key, Function<R, Collection<T>> getter) {
         return new ListEntry<>(key, new ClassSerializer<>(clazz, ConfigRegistry.INSTANCE), getter);
     }
 
     static <T, R> ListEntry<T, R> listEntry(ConfigSerializer<T> serializer, String key, Function<R, Collection<T>> getter) {
-
         return new ListEntry<>(key, serializer.toRaw(), getter);
     }
 
     static <T, R> ListEntry<T, R> listEntry(InlineSerializer<T> serializer, String key, Function<R, Collection<T>> getter) {
-
         return new ListEntry<>(key, serializer.toRaw(), getter);
+    }
+
+    static <T, R> ListEntry<T, R> listEntry(Serializer<T, Object> serializer, String key, Function<R, Collection<T>> getter) {
+        return new ListEntry<>(key, serializer, getter);
     }
 
     static <T, R> MapEntry<String, T, R> mapEntry(Class<T> clazz, String key, Function<R, Map<String, T>> getter) {
@@ -85,12 +95,20 @@ public interface ConfigSerializer<T> extends Serializer<T, ConfigSection> {
         return new MapEntry<>(key, InlineSerializer.RAW, serializer.toRaw(), getter);
     }
 
+    static <T, R> MapEntry<String, T, R> mapEntry(Serializer<T, Object> serializer, String key, Function<R, Map<String, T>> getter) {
+        return new MapEntry<>(key, InlineSerializer.RAW, serializer, getter);
+    }
+
     static <K, V, R> MapEntry<K, V, R> mapEntry(InlineSerializer<K> keySerializer, ConfigSerializer<V> valueSerializer, String key, Function<R, Map<K, V>> getter) {
         return new MapEntry<>(key, keySerializer, valueSerializer.toRaw(), getter);
     }
 
     static <K, V, R> MapEntry<K, V, R> mapEntry(InlineSerializer<K> keySerializer, InlineSerializer<V> valueSerializer, String key, Function<R, Map<K, V>> getter) {
         return new MapEntry<>(key, keySerializer, valueSerializer.toRaw(), getter);
+    }
+
+    static <K, V, R> MapEntry<K, V, R> mapEntry(InlineSerializer<K> keySerializer, Serializer<V, Object> valueSerializer, String key, Function<R, Map<K, V>> getter) {
+        return new MapEntry<>(key, keySerializer, valueSerializer, getter);
     }
 
     static <T> ConfigSerializer<T> of(Function<T, ConfigSection> serialize, Function<ConfigSection, T> deserialize) {
@@ -813,8 +831,8 @@ public interface ConfigSerializer<T> extends Serializer<T, ConfigSection> {
         private final Serializer<T, Object> serializer;
         private final Function<C, T> getter;
 
-        private T defaultValue;
-        private boolean isOptional;
+        private T defaultValue = null;
+        private boolean isOptional = false;
 
         public SingleEntry(String key, Serializer<T, Object> serializer, Function<C, T> getter) {
             this.key = key;
@@ -862,10 +880,7 @@ public interface ConfigSerializer<T> extends Serializer<T, ConfigSection> {
         @Override
         public boolean isValid(ConfigSection sec) {
 
-            if(isOptional) return true;
-
-            Object o = sec.get(key);
-            return serializer.canDeserialize(o);
+            return isOptional || serializer.canDeserialize(sec.get(key));
         }
 
         @Override
@@ -930,14 +945,14 @@ public interface ConfigSerializer<T> extends Serializer<T, ConfigSection> {
         @Override
         public boolean isValid(ConfigSection sec) {
 
-            return isOptional || sec.has(key, List.class);
+            return isOptional || serializer.canDeserialize(sec.get(key));
         }
 
         @Override
         public Object serialize(C value) {
 
             Collection<T> val = getOrDefault(value);
-            if(val == null) return null;
+            if(val == null || isOptional && val.isEmpty()) return null;
 
             List<Object> out = new ArrayList<>();
             for(T t : val) {
@@ -1009,14 +1024,14 @@ public interface ConfigSerializer<T> extends Serializer<T, ConfigSection> {
         @Override
         public boolean isValid(ConfigSection sec) {
 
-            return isOptional || sec.has(key, ConfigSection.class);
+            return isOptional || valueSerializer.canDeserialize(sec.get(key));
         }
 
         @Override
         public Object serialize(C value) {
 
             Map<K, V> val = getOrDefault(value);
-            if(val == null) return null;
+            if(val == null || isOptional && val.isEmpty()) return null;
 
             Map<String, Object> out = new HashMap<>();
             for(Map.Entry<K, V> ent : val.entrySet()) {
