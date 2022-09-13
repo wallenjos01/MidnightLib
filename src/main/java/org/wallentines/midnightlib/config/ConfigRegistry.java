@@ -1,6 +1,5 @@
 package org.wallentines.midnightlib.config;
 
-import org.wallentines.midnightlib.config.serialization.json.JsonConfigProvider;
 import org.wallentines.midnightlib.config.serialization.ConfigSerializer;
 import org.wallentines.midnightlib.config.serialization.InlineSerializer;
 import org.wallentines.midnightlib.math.*;
@@ -89,6 +88,14 @@ public class ConfigRegistry {
         return getInlineSerializer(clazz, Direction.SERIALIZE) != null;
     }
 
+    public boolean canDeserialize(Class<?> clazz) {
+        return getSerializer(clazz, Direction.DESERIALIZE) != null;
+    }
+
+    public boolean canDeserializeInline(Class<?> clazz) {
+        return getInlineSerializer(clazz, Direction.DESERIALIZE) != null;
+    }
+
     public <T extends ConfigProvider> T registerProvider(T prov) {
         if(providersByExtension.containsKey(prov.getFileExtension())) return null;
 
@@ -131,9 +138,9 @@ public class ConfigRegistry {
         }
     };
 
-    public void setupDefaults(String defaultNamespace) {
+    public void setupDefaults(String defaultNamespace, ConfigProvider provider) {
 
-        setDefaultProvider(registerProvider(JsonConfigProvider.INSTANCE));
+        setDefaultProvider(registerProvider(provider));
 
         registerInlineSerializer(Identifier.class, new Identifier.Serializer(defaultNamespace));
         registerInlineSerializer(Vec3d.class, Vec3d.SERIALIZER);

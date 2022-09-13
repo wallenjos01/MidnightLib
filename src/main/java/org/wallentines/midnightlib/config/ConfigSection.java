@@ -1,10 +1,5 @@
 package org.wallentines.midnightlib.config;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonPrimitive;
-import com.google.gson.internal.LinkedTreeMap;
 import org.wallentines.midnightlib.config.serialization.ConfigSerializer;
 import org.wallentines.midnightlib.config.serialization.InlineSerializer;
 
@@ -13,7 +8,7 @@ import java.util.*;
 @SuppressWarnings("unused")
 public class ConfigSection {
     private final ConfigRegistry reg;
-    private final LinkedTreeMap<String, Object> entries = new LinkedTreeMap<>();
+    private final LinkedHashMap<String, Object> entries = new LinkedHashMap<>();
 
     public ConfigSection() {
         this(ConfigRegistry.INSTANCE);
@@ -270,6 +265,23 @@ public class ConfigSection {
         }
     }
 
+    public ConfigSection copy() {
+
+        ConfigSection out = new ConfigSection();
+        for(Map.Entry<String, Object> ent : entries.entrySet()) {
+
+            Object val = ent.getValue();
+            if(val instanceof ConfigSection) {
+                out.set(ent.getKey(), ((ConfigSection) val).copy());
+            } else if(val instanceof Collection) {
+                out.set(ent.getKey(), new ArrayList<>((Collection<?>) val));
+            } else {
+                out.set(ent.getKey(), ent.getValue());
+            }
+        }
+        return out;
+    }
+
     @SuppressWarnings("unchecked")
     private <T> T convert(Object o, Class<T> clazz) {
 
@@ -313,11 +325,11 @@ public class ConfigSection {
     private <T> boolean canConvert(Object o, Class<T> clazz) {
 
         if(reg != null) {
-            if(reg.canSerialize(clazz) && o instanceof ConfigSection) {
+            if(reg.canDeserialize(clazz) && o instanceof ConfigSection) {
                 ConfigSerializer<T> ser = reg.getSerializer(clazz, ConfigRegistry.Direction.DESERIALIZE);
                 return ser.canDeserialize((ConfigSection) o);
             }
-            if(reg.canSerializeInline(clazz)) {
+            if(reg.canDeserializeInline(clazz)) {
 
                 InlineSerializer<T> ser = reg.getInlineSerializer(clazz, ConfigRegistry.Direction.DESERIALIZE);
                 return ser.canDeserialize(o.toString());
@@ -346,53 +358,10 @@ public class ConfigSection {
         return out;
     }
 
-    public JsonObject toJson() {
-
-        return (JsonObject) toJsonElement(this);
-    }
 
     @Override
     public String toString() {
-        return toJson().toString();
-    }
-
-    private static JsonElement toJsonElement(Object obj) {
-
-        if(obj instanceof ConfigSection) {
-
-            ConfigSection sec = (ConfigSection) obj;
-
-            JsonObject out = new JsonObject();
-            for(String s : sec.getKeys()) {
-
-                out.add(s, toJsonElement(sec.get(s)));
-            }
-
-            return out;
-
-        } else if(obj instanceof List<?>) {
-
-            List<?> lst = (List<?>) obj;
-
-            JsonArray arr = new JsonArray();
-
-            for (Object o : lst) {
-                arr.add(toJsonElement(o));
-            }
-            return arr;
-
-        } else if(obj instanceof Number) {
-
-            return new JsonPrimitive((Number) obj);
-
-        } else if(obj instanceof Boolean) {
-
-            return new JsonPrimitive((Boolean) obj);
-
-        } else {
-
-            return new JsonPrimitive(obj.toString());
-        }
+        return reg.getDefaultProvider().saveToString(this);
     }
 
 }

@@ -1,5 +1,6 @@
 package org.wallentines.midnightlib.config.serialization.json;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
@@ -60,11 +61,6 @@ public class JsonConfigProvider implements ConfigProvider {
     @Override
     public String getFileExtension() {
         return ".json";
-    }
-
-    private JsonObject toJson(ConfigSection sec) {
-
-        return sec.toJson();
     }
 
     private ConfigSection fromJson(JsonObject obj) {
@@ -133,6 +129,50 @@ public class JsonConfigProvider implements ConfigProvider {
         }
 
         return ele.toString();
-
     }
+
+    public JsonObject toJson(ConfigSection sec) {
+
+        return (JsonObject) toJsonElement(sec);
+    }
+
+    private static JsonElement toJsonElement(Object obj) {
+
+        if(obj instanceof ConfigSection) {
+
+            ConfigSection sec = (ConfigSection) obj;
+
+            JsonObject out = new JsonObject();
+            for(String s : sec.getKeys()) {
+
+                out.add(s, toJsonElement(sec.get(s)));
+            }
+
+            return out;
+
+        } else if(obj instanceof List<?>) {
+
+            List<?> lst = (List<?>) obj;
+
+            JsonArray arr = new JsonArray();
+
+            for (Object o : lst) {
+                arr.add(toJsonElement(o));
+            }
+            return arr;
+
+        } else if(obj instanceof Number) {
+
+            return new JsonPrimitive((Number) obj);
+
+        } else if(obj instanceof Boolean) {
+
+            return new JsonPrimitive((Boolean) obj);
+
+        } else {
+
+            return new JsonPrimitive(obj.toString());
+        }
+    }
+
 }
