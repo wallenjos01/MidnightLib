@@ -1,5 +1,8 @@
 package org.wallentines.midnightlib.config.serialization;
 
+import java.util.Collection;
+import java.util.function.Function;
+
 public class PrimitiveSerializers {
 
     public static final InlineSerializer<String> STRING = InlineSerializer.RAW;
@@ -11,9 +14,11 @@ public class PrimitiveSerializers {
     public static final NumberSerializer<Float> FLOAT = new NumberSerializer<>(Number::floatValue);
     public static final NumberSerializer<Double> DOUBLE = new NumberSerializer<>(Number::doubleValue);
 
-    public static final ClassSerializer<Boolean> BOOLEAN = new ClassSerializer<>(Boolean.class);
+    public static final InlineSerializer<java.util.UUID> UUID = InlineSerializer.of(java.util.UUID::toString, java.util.UUID::fromString);
 
-    private static class NumberSerializer<T> implements Serializer<T, Object> {
+    public static final InlineSerializer<Boolean> BOOLEAN = InlineSerializer.of(Object::toString, Boolean::parseBoolean);
+
+    public static class NumberSerializer<T> implements Serializer<T, Object> {
 
         Functions.Function1<Number, T> serializer;
 
@@ -35,6 +40,11 @@ public class PrimitiveSerializers {
         @Override
         public boolean canDeserialize(Object object) {
             return object instanceof Number;
+        }
+
+        @Override
+        public <R> ConfigSerializer.Entry<T, R> entry(String key, Function<R, T> getter) {
+            return ConfigSerializer.entry(this, key, getter);
         }
     }
 

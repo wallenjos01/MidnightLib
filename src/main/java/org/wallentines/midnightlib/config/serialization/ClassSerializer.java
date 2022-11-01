@@ -3,6 +3,8 @@ package org.wallentines.midnightlib.config.serialization;
 import org.wallentines.midnightlib.config.ConfigRegistry;
 import org.wallentines.midnightlib.config.ConfigSection;
 
+import java.util.function.Function;
+
 public class ClassSerializer<T> implements Serializer<T, Object> {
 
     private final Class<T> clazz;
@@ -53,4 +55,14 @@ public class ClassSerializer<T> implements Serializer<T, Object> {
 
         return (object instanceof ConfigSection) && registry.canSerialize(clazz) || registry.canSerializeInline(clazz);
     }
+
+    @Override
+    public <R> ConfigSerializer.Entry<T, R> entry(String key, Function<R, T> getter) {
+        return ConfigSerializer.entry(this, key, getter);
+    }
+
+    public static <T> ClassSerializer<T> of(Class<T> clazz) {
+        return new ClassSerializer<>(clazz);
+    }
+
 }

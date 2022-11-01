@@ -358,7 +358,6 @@ public class ConfigSection {
         return out;
     }
 
-
     @Override
     public String toString() {
         return reg.getDefaultProvider().saveToString(this);

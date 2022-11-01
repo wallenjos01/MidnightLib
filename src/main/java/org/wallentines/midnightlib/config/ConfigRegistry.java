@@ -126,17 +126,7 @@ public class ConfigRegistry {
 
     }
 
-    public static final InlineSerializer<UUID> UUID_SERIALIZER = new InlineSerializer<UUID>() {
-        @Override
-        public UUID deserialize(String string) {
-            return UUID.fromString(string);
-        }
-
-        @Override
-        public String serialize(UUID object) {
-            return object.toString();
-        }
-    };
+    public static final InlineSerializer<UUID> UUID_SERIALIZER = InlineSerializer.of(UUID::toString, UUID::fromString);
 
     public void setupDefaults(String defaultNamespace, ConfigProvider provider) {
 

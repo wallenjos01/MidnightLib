@@ -1,3 +1,5 @@
+import org.gradle.api.JavaVersion
+
 plugins {
     id 'java'
     id 'maven-publish'
@@ -10,8 +12,8 @@ repositories {
     mavenCentral()
 }
 
-sourceCompatibility = JavaVersion.VERSION_1_8;
-targetCompatibility = JavaVersion.VERSION_1_8;
+sourceCompatibility = JavaVersion.VERSION_11
+targetCompatibility = JavaVersion.VERSION_11
 
 dependencies {
     implementation 'org.apache.logging.log4j:log4j-api:2.17.1'

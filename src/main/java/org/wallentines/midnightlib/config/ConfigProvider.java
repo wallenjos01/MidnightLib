@@ -9,6 +9,8 @@ public interface ConfigProvider {
 
     ConfigSection loadFromStream(InputStream stream);
 
+    ConfigSection loadFromString(String string);
+
     void saveToFile(ConfigSection config, File file);
 
     String saveToString(ConfigSection config);

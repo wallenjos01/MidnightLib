@@ -20,9 +20,10 @@ public interface InlineSerializer<T> extends Serializer<T, String> {
         return val != null;
     }
 
+    @Deprecated
     default Serializer<T, Object> toRaw() {
 
-        return new Serializer<T, Object>() {
+        return new Serializer<>() {
             @Override
             public Object serialize(T value) {
                 return value == null ? null : InlineSerializer.this.serialize(value);
@@ -36,6 +37,11 @@ public interface InlineSerializer<T> extends Serializer<T, String> {
             @Override
             public boolean canDeserialize(Object object) {
                 return InlineSerializer.this.canDeserialize(object.toString());
+            }
+
+            @Override
+            public <R> ConfigSerializer.Entry<T, R> entry(String key, Function<R, T> getter) {
+                return ConfigSerializer.entry(this, key, getter);
             }
         };
     }
@@ -74,7 +80,7 @@ public interface InlineSerializer<T> extends Serializer<T, String> {
         };
     }
 
-    InlineSerializer<String> RAW = new InlineSerializer<String>() {
+    InlineSerializer<String> RAW = new InlineSerializer<>() {
         @Override
         public String deserialize(String s) {
             return s;
@@ -85,6 +91,11 @@ public interface InlineSerializer<T> extends Serializer<T, String> {
             return object;
         }
     };
+
+    @Override
+    default <R> ConfigSerializer.Entry<T, R> entry(String key, Function<R, T> getter) {
+        return ConfigSerializer.entry(this, key, getter);
+    }
 
 }
 

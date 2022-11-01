@@ -3,6 +3,7 @@ package org.wallentines.midnightlib.registry;
 import org.wallentines.midnightlib.config.ConfigSection;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 
@@ -177,6 +178,10 @@ public class Registry<T> implements Iterable<T> {
             T obj = sec.get(key, convertTo);
             register(id, obj);
         }
+    }
+
+    public Collection<Identifier> getIds() {
+        return indexById.keySet();
     }
 
     @Override

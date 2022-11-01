@@ -27,6 +27,7 @@ public interface ConfigSerializer<T> extends Serializer<T, ConfigSection> {
         return val != null;
     }
 
+    @Deprecated
     default Serializer<T, Object> toRaw() {
 
         return new Serializer<T, Object>() {
@@ -46,67 +47,102 @@ public interface ConfigSerializer<T> extends Serializer<T, ConfigSection> {
             public boolean canDeserialize(Object object) {
                 return object instanceof ConfigSection && ConfigSerializer.this.canDeserialize((ConfigSection) object);
             }
+
+            @Override
+            public <R> Entry<T, R> entry(String key, Function<R, T> getter) {
+                return ConfigSerializer.entry(this, key, getter);
+            }
         };
     }
 
-
     static <T, R> Entry<T, R> entry(Class<T> clazz, String key, Function<R, T> getter) {
-        return new SingleEntry<>(key, new ClassSerializer<>(clazz, ConfigRegistry.INSTANCE), getter);
+        ClassSerializer<T> serializer = new ClassSerializer<>(clazz, ConfigRegistry.INSTANCE);
+        return new BasicEntry<>(key, serializer, getter, obj -> obj);
     }
 
     static <T, R> Entry<T, R> entry(ConfigSerializer<T> serializer, String key, Function<R, T> getter) {
-        return new SingleEntry<>(key, serializer.toRaw(), getter);
+        return new BasicEntry<>(key, serializer, getter, obj -> {
+            if(!(obj instanceof ConfigSection)) throw new IllegalArgumentException("Object must be a ConfigSection!");
+            return (ConfigSection) obj;
+        });
     }
 
     static <T, R> Entry<T, R> entry(InlineSerializer<T> serializer, String key, Function<R, T> getter) {
-        return new SingleEntry<>(key, serializer.toRaw(), getter);
+        return new BasicEntry<>(key, serializer, getter, Object::toString);
+    }
+
+    @SuppressWarnings("unchecked")
+    static <T, O, R> Entry<Collection<T>, R> entry(ListSerializer<T, O> serializer, String key, Function<R, Collection<T>> getter) {
+        return new BasicEntry<>(key, serializer, getter, obj -> {
+            if(!(obj instanceof Collection)) throw new IllegalArgumentException("Object must be a Collection!");
+            return (Collection<O>) obj;
+        });
+    }
+
+    @SuppressWarnings("unchecked")
+    static <K, V, O, R> Entry<Map<K, V>, R> entry(MapSerializer<K, V, O> serializer, String key, Function<R, Map<K, V>> getter) {
+        return new BasicEntry<>(key, serializer, getter, obj -> {
+            if(obj instanceof ConfigSection) return (Map<String, O>) ((ConfigSection) obj).getEntries();
+            if(!(obj instanceof Map)) throw new IllegalArgumentException("Object must be a Map!");
+            return (Map<String, O>) obj;
+        });
     }
 
     static <T, R> Entry<T, R> entry(Serializer<T, Object> serializer, String key, Function<R, T> getter) {
-        return new SingleEntry<>(key, serializer, getter);
+        return new BasicEntry<>(key, serializer, getter, obj -> obj);
     }
 
-
+    @Deprecated
     static <T, R> ListEntry<T, R> listEntry(Class<T> clazz, String key, Function<R, Collection<T>> getter) {
         return new ListEntry<>(key, new ClassSerializer<>(clazz, ConfigRegistry.INSTANCE), getter);
     }
 
+    @Deprecated
     static <T, R> ListEntry<T, R> listEntry(ConfigSerializer<T> serializer, String key, Function<R, Collection<T>> getter) {
         return new ListEntry<>(key, serializer.toRaw(), getter);
     }
 
+    @Deprecated
     static <T, R> ListEntry<T, R> listEntry(InlineSerializer<T> serializer, String key, Function<R, Collection<T>> getter) {
         return new ListEntry<>(key, serializer.toRaw(), getter);
     }
 
+    @Deprecated
     static <T, R> ListEntry<T, R> listEntry(Serializer<T, Object> serializer, String key, Function<R, Collection<T>> getter) {
         return new ListEntry<>(key, serializer, getter);
     }
 
+    @Deprecated
     static <T, R> MapEntry<String, T, R> mapEntry(Class<T> clazz, String key, Function<R, Map<String, T>> getter) {
         return new MapEntry<>(key, InlineSerializer.RAW, new ClassSerializer<>(clazz, ConfigRegistry.INSTANCE), getter);
     }
 
+    @Deprecated
     static <T, R> MapEntry<String, T, R> mapEntry(ConfigSerializer<T> serializer, String key, Function<R, Map<String, T>> getter) {
         return new MapEntry<>(key, InlineSerializer.RAW, serializer.toRaw(), getter);
     }
 
+    @Deprecated
     static <T, R> MapEntry<String, T, R> mapEntry(InlineSerializer<T> serializer, String key, Function<R, Map<String, T>> getter) {
         return new MapEntry<>(key, InlineSerializer.RAW, serializer.toRaw(), getter);
     }
 
+    @Deprecated
     static <T, R> MapEntry<String, T, R> mapEntry(Serializer<T, Object> serializer, String key, Function<R, Map<String, T>> getter) {
         return new MapEntry<>(key, InlineSerializer.RAW, serializer, getter);
     }
 
+    @Deprecated
     static <K, V, R> MapEntry<K, V, R> mapEntry(InlineSerializer<K> keySerializer, ConfigSerializer<V> valueSerializer, String key, Function<R, Map<K, V>> getter) {
         return new MapEntry<>(key, keySerializer, valueSerializer.toRaw(), getter);
     }
 
+    @Deprecated
     static <K, V, R> MapEntry<K, V, R> mapEntry(InlineSerializer<K> keySerializer, InlineSerializer<V> valueSerializer, String key, Function<R, Map<K, V>> getter) {
         return new MapEntry<>(key, keySerializer, valueSerializer.toRaw(), getter);
     }
 
+    @Deprecated
     static <K, V, R> MapEntry<K, V, R> mapEntry(InlineSerializer<K> keySerializer, Serializer<V, Object> valueSerializer, String key, Function<R, Map<K, V>> getter) {
         return new MapEntry<>(key, keySerializer, valueSerializer, getter);
     }
@@ -824,6 +860,7 @@ public interface ConfigSerializer<T> extends Serializer<T, ConfigSection> {
         Object serialize(C value);
     }
 
+    @Deprecated
     class SingleEntry<T, C> implements Entry<T, C> {
 
         private final String key;
@@ -890,6 +927,71 @@ public interface ConfigSerializer<T> extends Serializer<T, ConfigSection> {
         }
     }
 
+    class BasicEntry<T, O, C> implements Entry<T, C> {
+
+        private final String key;
+
+        private final Serializer<T, O> serializer;
+
+        private final Function<C, T> getter;
+
+        private final Function<Object, O> converter;
+
+        private T defaultValue = null;
+        private boolean isOptional = false;
+
+        public BasicEntry(String key, Serializer<T, O> serializer, Function<C, T> getter, Function<Object, O> converter) {
+            this.key = key;
+            this.serializer = serializer;
+            this.getter = getter;
+            this.converter = converter;
+        }
+
+        @Override
+        public String getKey() {
+            return key;
+        }
+
+        @Override
+        public Entry<T, C> orDefault(T defaultValue) {
+            this.defaultValue = defaultValue;
+            this.isOptional = true;
+            return this;
+        }
+
+        @Override
+        public Entry<T, C> optional() {
+            this.isOptional = true;
+            return this;
+        }
+
+        @Override
+        public T getOrDefault(C value) {
+            T out = getter.apply(value);
+            return out == null ? defaultValue : out;
+        }
+
+        @Override
+        public T parse(ConfigSection section) {
+            Object o = section.get(key);
+            if(o == null && isOptional) {
+                return defaultValue;
+            }
+            return serializer.deserialize(converter.apply(o));
+        }
+
+        @Override
+        public boolean isValid(ConfigSection sec) {
+            return isOptional || serializer.canDeserialize(converter.apply(sec.get(key)));
+        }
+
+        @Override
+        public Object serialize(C value) {
+            return serializer.serialize(getOrDefault(value));
+        }
+    }
+
+    @Deprecated
     class ListEntry<T, C> implements Entry<Collection<T>, C> {
 
         private final String key;
@@ -963,6 +1065,7 @@ public interface ConfigSerializer<T> extends Serializer<T, ConfigSection> {
         }
     }
 
+    @Deprecated
     class MapEntry<K, V, C> implements Entry<Map<K, V>, C> {
         private final String key;
 
@@ -1040,6 +1143,20 @@ public interface ConfigSerializer<T> extends Serializer<T, ConfigSection> {
 
             return out;
         }
+    }
+    ConfigSerializer<ConfigSection> RAW = new ConfigSerializer<>() {
+        @Override
+        public ConfigSection deserialize(ConfigSection section) {
+            return section;
+        }
+        @Override
+        public ConfigSection serialize(ConfigSection object) {
+            return object;
+        }
+    };
+
+    default <R> ConfigSerializer.Entry<T, R> entry(String key, Function<R, T> getter) {
+        return ConfigSerializer.entry(this, key, getter);
     }
 }
 
