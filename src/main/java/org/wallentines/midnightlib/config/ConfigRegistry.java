@@ -21,8 +21,9 @@ public class ConfigRegistry {
 
     private final List<ConfigProvider> providers = new ArrayList<>();
     private final HashMap<String, Integer> providersByExtension = new HashMap<>();
-
     private ConfigProvider defaultProvider;
+    private String defaultNamespace = "midnight";
+    private Identifier.Serializer idSerializer = new Identifier.Serializer(defaultNamespace);
 
     public ConfigProvider getDefaultProvider() {
         if(defaultProvider == null) {
@@ -126,13 +127,24 @@ public class ConfigRegistry {
 
     }
 
+    public String getDefaultNamespace() {
+        return defaultNamespace;
+    }
+
+    public Identifier.Serializer getIdSerializer() {
+        return idSerializer;
+    }
+
     public static final InlineSerializer<UUID> UUID_SERIALIZER = InlineSerializer.of(UUID::toString, UUID::fromString);
 
     public void setupDefaults(String defaultNamespace, ConfigProvider provider) {
 
+        this.defaultNamespace = defaultNamespace;
+        this.idSerializer = new Identifier.Serializer(defaultNamespace);
+
         setDefaultProvider(registerProvider(provider));
 
-        registerInlineSerializer(Identifier.class, new Identifier.Serializer(defaultNamespace));
+        registerInlineSerializer(Identifier.class, idSerializer);
         registerInlineSerializer(Vec3d.class, Vec3d.SERIALIZER);
         registerInlineSerializer(Vec3i.class, Vec3i.SERIALIZER);
         registerInlineSerializer(Vec2d.class, Vec2d.SERIALIZER);

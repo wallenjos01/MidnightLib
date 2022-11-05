@@ -57,18 +57,18 @@ public interface ConfigSerializer<T> extends Serializer<T, ConfigSection> {
 
     static <T, R> Entry<T, R> entry(Class<T> clazz, String key, Function<R, T> getter) {
         ClassSerializer<T> serializer = new ClassSerializer<>(clazz, ConfigRegistry.INSTANCE);
-        return new BasicEntry<>(key, serializer, getter, obj -> obj);
+        return new BasicEntry<>(key, serializer, getter, obj -> obj, null);
     }
 
     static <T, R> Entry<T, R> entry(ConfigSerializer<T> serializer, String key, Function<R, T> getter) {
         return new BasicEntry<>(key, serializer, getter, obj -> {
             if(!(obj instanceof ConfigSection)) throw new IllegalArgumentException("Object must be a ConfigSection!");
             return (ConfigSection) obj;
-        });
+        }, null);
     }
 
     static <T, R> Entry<T, R> entry(InlineSerializer<T> serializer, String key, Function<R, T> getter) {
-        return new BasicEntry<>(key, serializer, getter, Object::toString);
+        return new BasicEntry<>(key, serializer, getter, Object::toString, null);
     }
 
     @SuppressWarnings("unchecked")
@@ -76,7 +76,7 @@ public interface ConfigSerializer<T> extends Serializer<T, ConfigSection> {
         return new BasicEntry<>(key, serializer, getter, obj -> {
             if(!(obj instanceof Collection)) throw new IllegalArgumentException("Object must be a Collection!");
             return (Collection<O>) obj;
-        });
+        }, Collections.emptyList());
     }
 
     @SuppressWarnings("unchecked")
@@ -85,11 +85,11 @@ public interface ConfigSerializer<T> extends Serializer<T, ConfigSection> {
             if(obj instanceof ConfigSection) return (Map<String, O>) ((ConfigSection) obj).getEntries();
             if(!(obj instanceof Map)) throw new IllegalArgumentException("Object must be a Map!");
             return (Map<String, O>) obj;
-        });
+        }, Collections.emptyMap());
     }
 
     static <T, R> Entry<T, R> entry(Serializer<T, Object> serializer, String key, Function<R, T> getter) {
-        return new BasicEntry<>(key, serializer, getter, obj -> obj);
+        return new BasicEntry<>(key, serializer, getter, obj -> obj, null);
     }
 
     @Deprecated
@@ -940,11 +940,12 @@ public interface ConfigSerializer<T> extends Serializer<T, ConfigSection> {
         private T defaultValue = null;
         private boolean isOptional = false;
 
-        public BasicEntry(String key, Serializer<T, O> serializer, Function<C, T> getter, Function<Object, O> converter) {
+        public BasicEntry(String key, Serializer<T, O> serializer, Function<C, T> getter, Function<Object, O> converter, T defaultValue) {
             this.key = key;
             this.serializer = serializer;
             this.getter = getter;
             this.converter = converter;
+            this.defaultValue = defaultValue;
         }
 
         @Override
@@ -987,7 +988,9 @@ public interface ConfigSerializer<T> extends Serializer<T, ConfigSection> {
 
         @Override
         public Object serialize(C value) {
-            return serializer.serialize(getOrDefault(value));
+            T obj = getOrDefault(value);
+            if(obj == null) return null;
+            return serializer.serialize(obj);
         }
     }
 

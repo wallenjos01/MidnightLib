@@ -1,6 +1,8 @@
 package org.wallentines.midnightlib.registry;
 
+import org.wallentines.midnightlib.config.ConfigRegistry;
 import org.wallentines.midnightlib.config.ConfigSection;
+import org.wallentines.midnightlib.config.serialization.InlineSerializer;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -182,6 +184,14 @@ public class Registry<T> implements Iterable<T> {
 
     public Collection<Identifier> getIds() {
         return indexById.keySet();
+    }
+
+    public InlineSerializer<T> nameSerializer() {
+        return nameSerializer(ConfigRegistry.INSTANCE.getIdSerializer());
+    }
+
+    public InlineSerializer<T> nameSerializer(Identifier.Serializer idSerializer) {
+        return InlineSerializer.of(val -> getId(val).toString(), id -> get(idSerializer.deserialize(id)));
     }
 
     @Override
