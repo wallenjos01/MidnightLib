@@ -12,6 +12,7 @@ import java.util.List;
 
 public class ModuleManager<T> {
 
+
     private static final Logger LOGGER = LogManager.getLogger("ModuleManager");
 
     private final String defaultNamespace;
@@ -38,6 +39,8 @@ public class ModuleManager<T> {
             indicesByClass.clear();
             indicesById.clear();
         }
+
+        section.fill(generateConfig(registry));
 
         int count = 0;
         for(String key : section.getKeys()) {
@@ -138,6 +141,46 @@ public class ModuleManager<T> {
 
     public Iterable<Identifier> getLoadedModuleIds() {
         return indicesById.keySet();
+    }
+
+    public void unloadModule(Identifier moduleId) {
+
+        int index = indicesById.get(moduleId);
+        if(index == -1) return;
+
+        Module<T> mod = loaded.get(index);
+
+        try {
+            mod.disable();
+        } catch (Exception ex) {
+            LOGGER.warn("An exception occurred while disabling a module!");
+            ex.printStackTrace();
+        }
+
+        indicesById.remove(moduleId);
+        indicesByClass.remove(mod.getClass());
+
+        loaded.set(index, (section, data) -> true);
+    }
+
+    public void unloadAll() {
+
+        List<Identifier> ids = new ArrayList<>(indicesById.keySet());
+        for(Identifier id : ids) {
+            unloadModule(id);
+        }
+    }
+
+    public void reloadModule(Identifier moduleId, ConfigSection config, T data, ModuleInfo<T> info) {
+
+        unloadModule(moduleId);
+        loadModule(info, data, config);
+    }
+
+    public void reloadAll(ConfigSection config, T data, Registry<ModuleInfo<T>> reg) {
+
+        unloadAll();
+        loadAll(config, data, reg);
     }
 
     public static <D> ConfigSection generateConfig(Registry<ModuleInfo<D>> reg) {
