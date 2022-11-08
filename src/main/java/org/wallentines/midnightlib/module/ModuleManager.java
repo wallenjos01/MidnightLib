@@ -2,7 +2,7 @@ package org.wallentines.midnightlib.module;
 
 import org.wallentines.midnightlib.config.ConfigSection;
 import org.wallentines.midnightlib.registry.Identifier;
-import org.wallentines.midnightlib.registry.Registry;
+import org.wallentines.midnightlib.registry.RegistryBase;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -28,7 +28,7 @@ public class ModuleManager<T> {
         this.defaultNamespace = defaultNamespace;
     }
 
-    public int loadAll(ConfigSection section, T data, Registry<ModuleInfo<T>> registry) {
+    public int loadAll(ConfigSection section, T data, RegistryBase<ModuleInfo<T>> registry) {
 
         if(loaded.size() > 0) {
             for (Module<T> mod : loaded) {
@@ -140,6 +140,7 @@ public class ModuleManager<T> {
     }
 
     public Iterable<Identifier> getLoadedModuleIds() {
+
         return indicesById.keySet();
     }
 
@@ -177,13 +178,13 @@ public class ModuleManager<T> {
         loadModule(info, data, config);
     }
 
-    public void reloadAll(ConfigSection config, T data, Registry<ModuleInfo<T>> reg) {
+    public void reloadAll(ConfigSection config, T data, RegistryBase<ModuleInfo<T>> reg) {
 
         unloadAll();
         loadAll(config, data, reg);
     }
 
-    public static <D> ConfigSection generateConfig(Registry<ModuleInfo<D>> reg) {
+    public static <D> ConfigSection generateConfig(RegistryBase<ModuleInfo<D>> reg) {
 
         ConfigSection out = new ConfigSection();
         for(ModuleInfo<D> info : reg) {
