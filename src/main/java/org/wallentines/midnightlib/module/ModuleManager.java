@@ -2,23 +2,20 @@ package org.wallentines.midnightlib.module;
 
 import org.wallentines.midnightlib.config.ConfigSection;
 import org.wallentines.midnightlib.registry.Identifier;
-import org.wallentines.midnightlib.registry.RegistryBase;
+import org.wallentines.midnightlib.registry.Registry;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
 public class ModuleManager<T> {
-
 
     private static final Logger LOGGER = LogManager.getLogger("ModuleManager");
 
     private final String defaultNamespace;
-    private final List<Module<T>> loaded = new ArrayList<>();
-    private final HashMap<Class<? extends Module<T>>, Integer> indicesByClass = new HashMap<>();
-    private final HashMap<Identifier, Integer> indicesById = new HashMap<>();
+
+    private final Registry<Module<T>> loaded = new Registry<>();
+    private final HashMap<Class<? extends Module<T>>, Identifier> idsByClass = new HashMap<>();
 
     public ModuleManager() {
         this("midnight");
@@ -28,16 +25,10 @@ public class ModuleManager<T> {
         this.defaultNamespace = defaultNamespace;
     }
 
-    public int loadAll(ConfigSection section, T data, RegistryBase<ModuleInfo<T>> registry) {
+    public int loadAll(ConfigSection section, T data, Registry<ModuleInfo<T>> registry) {
 
-        if(loaded.size() > 0) {
-            for (Module<T> mod : loaded) {
-                mod.disable();
-            }
-
-            loaded.clear();
-            indicesByClass.clear();
-            indicesById.clear();
+        if(loaded.getSize() > 0) {
+            unloadAll();
         }
 
         section.fill(generateConfig(registry));
@@ -48,17 +39,47 @@ public class ModuleManager<T> {
             if(!section.has(key, ConfigSection.class)) continue;
 
             Identifier id = Identifier.parseOrDefault(key, defaultNamespace);
-            ModuleInfo<T> info = registry.get(id);
 
+            ModuleInfo<T> info = registry.get(id);
             if(info == null) {
                 LOGGER.warn("Unknown module: " + id + " requested. Skipping...");
                 continue;
             }
 
-            if(loadModule(info, data, section.getSection(key))) {
-                count++;
-            }
+            count += loadWithDependencies(info, section, data, registry, new HashSet<>());
         }
+
+        return count;
+    }
+
+    private int loadWithDependencies(ModuleInfo<T> info, ConfigSection config, T data, Registry<ModuleInfo<T>> registry, Collection<ModuleInfo<T>> loading) {
+
+        if(loaded.get(info.getId()) != null) return 0;
+
+        if(loading.contains(info)) {
+            LOGGER.warn("Detected cyclical dependency while loading module " + info.getId());
+            return 0;
+        }
+
+        loading.add(info);
+
+        int count = 0;
+        for(Identifier dep : info.getDependencies()) {
+
+            ModuleInfo<T> depend = registry.get(dep);
+            if(depend == null) {
+                LOGGER.warn("One or more dependencies could not be found for module " + info.getId() + "! [" + dep + "]");
+                return count;
+            }
+
+            count += loadWithDependencies(depend, config, data, registry, loading);
+        }
+
+        if(loadModule(info, data, config.getSection(info.getId().toString()))) {
+            count++;
+        }
+
+        loading.remove(info);
 
         return count;
     }
@@ -69,11 +90,11 @@ public class ModuleManager<T> {
         Module<T> module = info.create();
         Identifier id = info.getId();
 
-        if(indicesByClass.containsKey(module.getClass())) {
+        if(idsByClass.containsKey(module.getClass())) {
             LOGGER.warn("Attempt to initialize two of the same module!");
             return false;
         }
-        if(indicesById.containsKey(id)) {
+        if(loaded.hasKey(id)) {
             LOGGER.warn("Attempt to initialize module with duplicate ID!");
             return false;
         }
@@ -84,6 +105,13 @@ public class ModuleManager<T> {
         section.fill(defaults);
 
         if(!section.getBoolean("enabled")) return false;
+
+        for(Identifier dep : info.getDependencies()) {
+            if(!loaded.hasKey(dep)) {
+                LOGGER.warn("One or more dependencies could not be found for module " + id + "! [" + dep + "]");
+                return false;
+            }
+        }
 
         try {
             if(!module.initialize(section, data)) {
@@ -98,58 +126,37 @@ public class ModuleManager<T> {
             return false;
         }
 
-        int index = loaded.size();
-
-        loaded.add(module);
-        indicesByClass.put((Class<M>) loaded.getClass(), index);
-        indicesById.put(id, index);
+        loaded.register(id, module);
+        idsByClass.put((Class<M>) loaded.getClass(), id);
 
         return true;
     }
 
-    @SuppressWarnings("unchecked")
-   public <M extends Module<T>> M getModule(Class<M> clazz) {
+    public <M extends Module<T>> M getModule(Class<M> clazz) {
 
-        Integer index = indicesByClass.get(clazz);
-        if(index != null) return (M) loaded.get(index);
-
-        for(int i = 0 ; i < loaded.size() ; i++) {
-
-            Module<T> mod = loaded.get(i);
-            if(clazz.isAssignableFrom(mod.getClass())) {
-
-                indicesByClass.put(clazz, i);
-                return (M) mod;
-            }
-        }
-
-        return null;
+        Identifier id = getIdByClass(clazz);
+        return id == null ? null : clazz.cast(loaded.get(id));
     }
 
     public Module<T> getModuleById(Identifier id) {
 
-        Integer index = indicesById.get(id);
-        if(index == null) return null;
-
-        return loaded.get(index);
+        return loaded.get(id);
     }
 
     public boolean isModuleLoaded(Identifier id) {
 
-        return indicesById.containsKey(id);
+        return loaded.hasKey(id);
     }
 
-    public Iterable<Identifier> getLoadedModuleIds() {
+    public Collection<Identifier> getLoadedModuleIds() {
 
-        return indicesById.keySet();
+        return loaded.getIds();
     }
 
     public void unloadModule(Identifier moduleId) {
 
-        int index = indicesById.get(moduleId);
-        if(index == -1) return;
-
-        Module<T> mod = loaded.get(index);
+        Module<T> mod = loaded.get(moduleId);
+        if(mod == null) return;
 
         try {
             mod.disable();
@@ -158,15 +165,12 @@ public class ModuleManager<T> {
             ex.printStackTrace();
         }
 
-        indicesById.remove(moduleId);
-        indicesByClass.remove(mod.getClass());
-
-        loaded.set(index, (section, data) -> true);
+        loaded.removeById(moduleId);
     }
 
     public void unloadAll() {
 
-        List<Identifier> ids = new ArrayList<>(indicesById.keySet());
+        List<Identifier> ids = new ArrayList<>(loaded.getIds());
         for(Identifier id : ids) {
             unloadModule(id);
         }
@@ -178,13 +182,40 @@ public class ModuleManager<T> {
         loadModule(info, data, config);
     }
 
-    public void reloadAll(ConfigSection config, T data, RegistryBase<ModuleInfo<T>> reg) {
+    public void reloadAll(ConfigSection config, T data, Registry<ModuleInfo<T>> reg) {
 
         unloadAll();
         loadAll(config, data, reg);
     }
 
-    public static <D> ConfigSection generateConfig(RegistryBase<ModuleInfo<D>> reg) {
+    public <M extends Module<T>> Identifier getModuleId(Class<M> clazz) {
+
+        return getIdByClass(clazz);
+    }
+
+    public Identifier getModuleId(Module<T> mod) {
+
+        return loaded.getId(mod);
+    }
+
+    private <M extends Module<T>> Identifier getIdByClass(Class<M> clazz) {
+
+        return idsByClass.computeIfAbsent(clazz, k -> {
+            for(Module<T> mod : loaded) {
+                if(clazz == mod.getClass() || clazz.isAssignableFrom(mod.getClass())) {
+                    return idsByClass.put(clazz, loaded.getId(mod));
+                }
+            }
+            return null;
+        });
+    }
+
+    public int getCount() {
+
+        return loaded.getSize();
+    }
+
+    public static <D> ConfigSection generateConfig(Registry<ModuleInfo<D>> reg) {
 
         ConfigSection out = new ConfigSection();
         for(ModuleInfo<D> info : reg) {

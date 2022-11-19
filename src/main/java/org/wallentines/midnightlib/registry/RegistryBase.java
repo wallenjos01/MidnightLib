@@ -68,6 +68,16 @@ public abstract class RegistryBase<I, T> implements Iterable<T> {
         return ids.get(index);
     }
 
+    public Integer indexOf(T value) {
+
+        return indexByValue.get(value);
+    }
+
+    public boolean hasKey(I id) {
+
+        return indexById.containsKey(id);
+    }
+
     public T valueAtIndex(int index) {
 
         if(index < 0 || index > size) {
