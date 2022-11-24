@@ -2,6 +2,7 @@ package org.wallentines.midnightlib.module;
 
 import org.wallentines.midnightlib.config.ConfigSection;
 import org.wallentines.midnightlib.event.Event;
+import org.wallentines.midnightlib.event.HandlerList;
 import org.wallentines.midnightlib.registry.Identifier;
 import org.wallentines.midnightlib.registry.Registry;
 import org.apache.logging.log4j.LogManager;
@@ -18,6 +19,10 @@ public class ModuleManager<T> {
     private final Registry<Module<T>> loaded = new Registry<>();
     private final HashMap<Class<? extends Module<T>>, Identifier> idsByClass = new HashMap<>();
     private final HashMap<Identifier, Set<Identifier>> dependents = new HashMap<>();
+
+    public final HandlerList<ModuleEvent> onLoad = new HandlerList<>();
+    public final HandlerList<ModuleEvent> onUnload = new HandlerList<>();
+
 
     public ModuleManager() {
         this("midnight");
@@ -133,6 +138,8 @@ public class ModuleManager<T> {
         loaded.register(id, module);
         idsByClass.put((Class<M>) loaded.getClass(), id);
 
+        onLoad.invoke(new ModuleEvent(module, id));
+
         return true;
     }
 
@@ -165,8 +172,11 @@ public class ModuleManager<T> {
             }
         }
 
+        onUnload.invoke(new ModuleEvent(mod, moduleId));
+
         // Make sure this module does not try to handle events after it is disabled.
         Event.unregisterAll(mod);
+
         try {
             mod.disable();
         } catch (Exception ex) {
@@ -249,6 +259,24 @@ public class ModuleManager<T> {
         }
 
         return out;
+    }
+
+    public class ModuleEvent extends Event {
+        private final Module<T> module;
+        private final Identifier id;
+
+        public ModuleEvent(Module<T> module, Identifier id) {
+            this.module = module;
+            this.id = id;
+        }
+
+        public Module<T> getModule() {
+            return module;
+        }
+
+        public Identifier getId() {
+            return id;
+        }
     }
 
 }
