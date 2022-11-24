@@ -19,7 +19,7 @@ public class Event {
         events.computeIfAbsent(ev, k -> new HandlerList<T>());
 
         HandlerList<T> list = (HandlerList<T>) events.get(ev);
-        list.add(listener, priority, handler);
+        list.register(listener, priority, handler);
 
     }
 
@@ -38,14 +38,14 @@ public class Event {
     public static void unregisterAll(Object o) {
 
         for(HandlerList<?> l : events.values()) {
-            l.clear(o);
+            l.unregisterAll(o);
         }
     }
 
     public static void unregisterAll(Class<? extends Event> event) {
 
         if(events.containsKey(event)) {
-            events.get(event).clear();
+            events.get(event).unregisterAll();
         }
     }
 

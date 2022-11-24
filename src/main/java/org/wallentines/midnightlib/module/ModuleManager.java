@@ -1,6 +1,7 @@
 package org.wallentines.midnightlib.module;
 
 import org.wallentines.midnightlib.config.ConfigSection;
+import org.wallentines.midnightlib.event.Event;
 import org.wallentines.midnightlib.registry.Identifier;
 import org.wallentines.midnightlib.registry.Registry;
 import org.apache.logging.log4j.LogManager;
@@ -16,6 +17,7 @@ public class ModuleManager<T> {
 
     private final Registry<Module<T>> loaded = new Registry<>();
     private final HashMap<Class<? extends Module<T>>, Identifier> idsByClass = new HashMap<>();
+    private final HashMap<Identifier, Set<Identifier>> dependents = new HashMap<>();
 
     public ModuleManager() {
         this("midnight");
@@ -71,6 +73,8 @@ public class ModuleManager<T> {
                 LOGGER.warn("One or more dependencies could not be found for module " + info.getId() + "! [" + dep + "]");
                 return count;
             }
+
+            dependents.computeIfAbsent(depend.getId(), k -> new HashSet<>()).add(info.getId());
 
             count += loadWithDependencies(depend, config, data, registry, loading);
         }
@@ -153,17 +157,32 @@ public class ModuleManager<T> {
         return loaded.getIds();
     }
 
-    public void unloadModule(Identifier moduleId) {
+    private void unloadWithDependents(Module<T> mod, Identifier moduleId) {
 
-        Module<T> mod = loaded.get(moduleId);
-        if(mod == null) return;
+        if(dependents.containsKey(moduleId)) {
+            for (Identifier id : dependents.get(moduleId)) {
+                unloadModule(id);
+            }
+        }
 
+        // Make sure this module does not try to handle events after it is disabled.
+        Event.unregisterAll(mod);
         try {
             mod.disable();
         } catch (Exception ex) {
             LOGGER.warn("An exception occurred while disabling a module!");
             ex.printStackTrace();
         }
+
+        dependents.remove(moduleId);
+    }
+
+    public void unloadModule(Identifier moduleId) {
+
+        Module<T> mod = loaded.get(moduleId);
+        if(mod == null) return;
+
+        unloadWithDependents(mod, moduleId);
 
         loaded.removeById(moduleId);
     }
@@ -172,8 +191,12 @@ public class ModuleManager<T> {
 
         List<Identifier> ids = new ArrayList<>(loaded.getIds());
         for(Identifier id : ids) {
-            unloadModule(id);
+
+            if(!loaded.hasKey(id)) continue;
+            unloadWithDependents(loaded.get(id), id);
         }
+
+        loaded.clear();
     }
 
     public void reloadModule(Identifier moduleId, ConfigSection config, T data, ModuleInfo<T> info) {
@@ -203,7 +226,7 @@ public class ModuleManager<T> {
         return idsByClass.computeIfAbsent(clazz, k -> {
             for(Module<T> mod : loaded) {
                 if(clazz == mod.getClass() || clazz.isAssignableFrom(mod.getClass())) {
-                    return idsByClass.put(clazz, loaded.getId(mod));
+                    return loaded.getId(mod);
                 }
             }
             return null;

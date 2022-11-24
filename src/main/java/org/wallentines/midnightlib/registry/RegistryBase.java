@@ -1,6 +1,5 @@
 package org.wallentines.midnightlib.registry;
 
-import org.wallentines.midnightlib.config.ConfigSection;
 import org.wallentines.midnightlib.config.serialization.InlineSerializer;
 
 import java.util.ArrayList;

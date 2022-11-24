@@ -19,17 +19,21 @@ public class HandlerList<T extends Event> {
     private boolean cancelled = false;
     private boolean invoking = false;
 
-    void add(Object o, int priority, EventHandler<T> handler) {
+    public void register(Object listener, EventHandler<T> handler) {
+        register(listener, 50, handler);
+    }
+
+    public void register(Object listener, int priority, EventHandler<T> handler) {
 
         WrappedHandler hand = new WrappedHandler();
         hand.handler = handler;
         hand.priority = priority;
-        hand.listener = new WeakReference<>(o);
+        hand.listener = new WeakReference<>(listener);
 
         run(() -> handlers.add(hand));
     }
 
-    void invoke(T event) {
+    public void invoke(T event) {
 
         if(invoking) return;
         invoking = true;
@@ -56,15 +60,15 @@ public class HandlerList<T extends Event> {
         waiting.clear();
     }
 
-    void cancel() {
+    public void cancel() {
         cancelled = true;
     }
 
-    void clear() {
+    public void unregisterAll() {
         handlers.clear();
     }
 
-    void clear(Object o) {
+    public void unregisterAll(Object o) {
         run(() -> handlers.removeIf(wrappedHandler -> wrappedHandler.listener.get() == o));
     }
 
