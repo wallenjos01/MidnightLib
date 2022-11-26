@@ -7,21 +7,21 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
 
-public class ModuleInfo<T> {
+public class ModuleInfo<T, M extends Module<T>> {
 
-    private final Supplier<Module<T>> get;
+    private final Supplier<M> get;
     private final Identifier id;
     private final ConfigSection defaultConfig;
 
     private final List<Identifier> dependencies = new ArrayList<>();
 
-    public ModuleInfo(Supplier<Module<T>> get, Identifier id, ConfigSection defaultConfig) {
+    public ModuleInfo(Supplier<M> get, Identifier id, ConfigSection defaultConfig) {
         this.get = get;
         this.id = id;
         this.defaultConfig = defaultConfig;
     }
 
-    public Module<T> create() {
+    public M create() {
         return get.get();
     }
 
@@ -37,7 +37,7 @@ public class ModuleInfo<T> {
         return dependencies;
     }
 
-    public ModuleInfo<T> dependsOn(Identifier id) {
+    public ModuleInfo<T, M> dependsOn(Identifier id) {
         dependencies.add(id);
         return this;
     }
