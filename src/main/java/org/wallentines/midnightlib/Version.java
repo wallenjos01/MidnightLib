@@ -21,6 +21,10 @@ public class Version {
         this.buildMetadata = buildMetadata;
     }
 
+    public Version(int major, int minor, int patch) {
+        this(major, minor, patch, null, null);
+    }
+
     public int getMajorVersion() {
         return major;
     }
@@ -45,6 +49,8 @@ public class Version {
     public String toString() {
         return SERIALIZER.serialize(this);
     }
+
+    public static Version fromString(String s) { return SERIALIZER.deserialize(s); }
 
     private static final Pattern NO_PNTS = Pattern.compile("^(0|[1-9]\\d*)");
     private static final Pattern ONE_PNT = Pattern.compile("^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)");
