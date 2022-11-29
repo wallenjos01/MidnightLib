@@ -1,5 +1,6 @@
 package org.wallentines.midnightlib.config;
 
+import org.wallentines.midnightlib.config.serialization.BooleanSerializer;
 import org.wallentines.midnightlib.config.serialization.ConfigSerializer;
 import org.wallentines.midnightlib.config.serialization.InlineSerializer;
 
@@ -198,21 +199,7 @@ public class ConfigSection {
 
     public boolean getBoolean(String key, boolean def) {
 
-        Object o = this.get(key);
-
-        if(o == null) return def;
-
-        if(o instanceof Boolean) {
-            return (boolean) o;
-
-        } else if(o instanceof Number) {
-            return ((Number) o).intValue() != 0;
-
-        } else if(o instanceof String) {
-            return o.equals("true");
-        }
-
-        return convert(o, Boolean.class);
+        return getOrDefault(key, def, Boolean.class);
     }
 
     public List<?> getList(String key) {
@@ -285,7 +272,7 @@ public class ConfigSection {
     }
 
     public void fill(ConfigSection other) {
-        for(String key : indicesByKey.keySet()) {
+        for(String key : other.indicesByKey.keySet()) {
             if(!has(key)) {
                 set(key, other.get(key));
             }
@@ -293,7 +280,7 @@ public class ConfigSection {
     }
 
     public void fillOverwrite(ConfigSection other) {
-        for(String key : indicesByKey.keySet()) {
+        for(String key : other.indicesByKey.keySet()) {
             set(key, other.get(key));
         }
     }
@@ -353,6 +340,10 @@ public class ConfigSection {
             }
         }
 
+        if(clazz == Boolean.class) {
+            return clazz.cast(BooleanSerializer.RAW.deserialize(o));
+        }
+
         throw new IllegalStateException("Invalid Type! " + o.getClass().getName() + " cannot be converted to " + clazz.getName());
     }
 
@@ -369,6 +360,10 @@ public class ConfigSection {
                 InlineSerializer<T> ser = reg.getInlineSerializer(clazz, ConfigRegistry.Direction.DESERIALIZE);
                 return ser.canDeserialize(o.toString());
             }
+        }
+
+        if(clazz == Boolean.class) {
+            return BooleanSerializer.RAW.canDeserialize(o);
         }
 
         return clazz.isAssignableFrom(o.getClass());
