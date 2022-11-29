@@ -129,15 +129,9 @@ public class ConfigSection {
     public <T> T getOrDefault(String key, T def, Class<T> clazz) {
 
         Object out = this.get(key);
-        if(out != null) {
-            try {
-                return convert(out, clazz);
-            } catch (Exception ex) {
-                // Ignore
-            }
-        }
 
-        return def;
+        if(out == null || !canConvert(out, clazz)) return def;
+        return convert(out, clazz);
     }
 
     public Collection<String> getKeys() {
@@ -173,15 +167,29 @@ public class ConfigSection {
         return this.get(key, Number.class).intValue();
     }
 
+    public int getInt(String key, int def) {
+        return this.getOrDefault(key, def, Number.class).intValue();
+    }
+
     public float getFloat(String key) {
         return this.get(key, Number.class).floatValue();
+    }
+
+    public float getFloat(String key, float def) {
+        return this.getOrDefault(key, def, Number.class).floatValue();
     }
 
     public double getDouble(String key) {
         return this.get(key, Number.class).doubleValue();
     }
 
+    public double getDouble(String key, double def) {
+        return this.getOrDefault(key, def, Number.class).doubleValue();
+    }
+
     public long getLong(String key) { return this.get(key, Number.class).longValue(); }
+
+    public long getLong(String key, long def) { return this.getOrDefault(key, def, Number.class).longValue(); }
 
     public boolean getBoolean(String key) {
 

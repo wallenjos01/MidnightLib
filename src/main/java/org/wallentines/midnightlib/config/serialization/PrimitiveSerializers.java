@@ -1,6 +1,7 @@
 package org.wallentines.midnightlib.config.serialization;
 
 import java.util.Collection;
+import java.util.Objects;
 import java.util.function.Function;
 
 public class PrimitiveSerializers {
@@ -16,7 +17,7 @@ public class PrimitiveSerializers {
 
     public static final InlineSerializer<java.util.UUID> UUID = InlineSerializer.of(java.util.UUID::toString, java.util.UUID::fromString);
 
-    public static final InlineSerializer<Boolean> BOOLEAN = InlineSerializer.of(Object::toString, Boolean::parseBoolean);
+    public static final Serializer<Boolean, Object> BOOLEAN = BooleanSerializer.RAW;
 
     public static class NumberSerializer<T> implements Serializer<T, Object> {
 
