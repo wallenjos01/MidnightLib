@@ -8,7 +8,10 @@ import java.util.*;
 @SuppressWarnings("unused")
 public class ConfigSection {
     private final ConfigRegistry reg;
-    private final LinkedHashMap<String, Object> entries = new LinkedHashMap<>();
+
+    private final List<Object> entries = new ArrayList<>();
+    private final List<String> keys = new ArrayList<>();
+    private final HashMap<String, Integer> indicesByKey = new HashMap<>();
 
     public ConfigSection() {
         this(ConfigRegistry.INSTANCE);
@@ -19,14 +22,26 @@ public class ConfigSection {
     }
 
     public <T> void set(String key, T obj) {
+
         // Remove an object
         if (obj == null) {
 
-            this.entries.remove(key);
+            Integer index = indicesByKey.get(key);
+            if(index != null) {
+                this.keys.remove(index.intValue());
+                this.entries.remove(index.intValue());
+                this.indicesByKey.remove(key);
+            }
 
+        // Add an object
         } else {
 
-            this.entries.put(key, serialize(obj));
+            int index = entries.size();
+
+            this.keys.add(key);
+            this.entries.add(serialize(obj));
+
+            this.indicesByKey.put(key, index);
         }
     }
 
@@ -92,7 +107,8 @@ public class ConfigSection {
     }
 
     public Object get(String key) {
-        return this.entries.get(key);
+
+        return getOrDefault(key, null);
     }
 
     public <T> T get(String key, Class<T> clazz) {
@@ -104,7 +120,10 @@ public class ConfigSection {
 
     public Object getOrDefault(String key, Object def) {
 
-        return entries.getOrDefault(key, def);
+        Integer index = indicesByKey.get(key);
+        if(index == null) return def;
+
+        return entries.get(index);
     }
 
     public <T> T getOrDefault(String key, T def, Class<T> clazz) {
@@ -121,16 +140,22 @@ public class ConfigSection {
         return def;
     }
 
-    public Iterable<String> getKeys() {
-        return entries.keySet();
+    public Collection<String> getKeys() {
+        return keys;
     }
 
     public Map<String, Object> getEntries() {
-        return new HashMap<>(entries);
+
+        Map<String, Object> out = new LinkedHashMap<>();
+        for(int i = 0 ; i < entries.size() ; i++) {
+            out.put(keys.get(i), entries.get(i));
+        }
+
+        return out;
     }
 
     public boolean has(String key) {
-        return this.entries.containsKey(key);
+        return this.indicesByKey.containsKey(key);
     }
 
     public <T> boolean has(String key, Class<T> clazz) {
@@ -252,33 +277,35 @@ public class ConfigSection {
     }
 
     public void fill(ConfigSection other) {
-        for(Map.Entry<String, Object> entry : other.getEntries().entrySet()) {
-            if(!has(entry.getKey())) {
-                set(entry.getKey(), entry.getValue());
+        for(String key : indicesByKey.keySet()) {
+            if(!has(key)) {
+                set(key, other.get(key));
             }
         }
     }
 
     public void fillOverwrite(ConfigSection other) {
-        for(Map.Entry<String, Object> entry : other.getEntries().entrySet()) {
-            set(entry.getKey(), entry.getValue());
+        for(String key : indicesByKey.keySet()) {
+            set(key, other.get(key));
         }
     }
 
     public ConfigSection copy() {
 
         ConfigSection out = new ConfigSection();
-        for(Map.Entry<String, Object> ent : entries.entrySet()) {
+        for(Object o : entries) {
 
-            Object val = ent.getValue();
-            if(val instanceof ConfigSection) {
-                out.set(ent.getKey(), ((ConfigSection) val).copy());
-            } else if(val instanceof Collection) {
-                out.set(ent.getKey(), new ArrayList<>((Collection<?>) val));
-            } else {
-                out.set(ent.getKey(), ent.getValue());
+            Object val = o;
+            if(o instanceof ConfigSection) {
+                val = ((ConfigSection) o).copy();
+            } else if(o instanceof Collection) {
+                val = new ArrayList<>((Collection<?>) o);
             }
+
+            out.entries.add(val);
         }
+
+        out.indicesByKey.putAll(indicesByKey);
         return out;
     }
 

@@ -66,6 +66,7 @@ public class JsonConfigProvider implements ConfigProvider {
     private ConfigSection fromJson(JsonObject obj) {
 
         ConfigSection out = new ConfigSection();
+        if(obj == null) return out;
 
         for(Map.Entry<String, JsonElement> ele : obj.entrySet()) {
 

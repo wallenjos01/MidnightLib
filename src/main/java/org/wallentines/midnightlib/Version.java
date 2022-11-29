@@ -45,6 +45,23 @@ public class Version {
         return buildMetadata;
     }
 
+    public boolean isGreater(Version other) {
+
+        return major > other.major ||
+                major == other.major && minor > other.minor ||
+                major == other.major && minor == other.minor && patch > other.patch;
+
+    }
+
+    public boolean isGreaterOrEqual(Version other) {
+
+        return major > other.major ||
+                major == other.major && minor > other.minor ||
+                major == other.major && minor == other.minor && patch > other.patch ||
+                major == other.major && minor == other.minor && patch == other.patch;
+
+    }
+
     @Override
     public String toString() {
         return SERIALIZER.serialize(this);
