@@ -1,6 +1,6 @@
 package org.wallentines.midnightlib.registry;
 
-import org.wallentines.midnightlib.config.serialization.InlineSerializer;
+import org.wallentines.mdcfg.serializer.InlineSerializer;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -167,7 +167,7 @@ public abstract class RegistryBase<I, T> implements Iterable<T> {
 
     @Override
     public Iterator<T> iterator() {
-        return new Iterator<T>() {
+        return new Iterator<>() {
 
             private int index = 0;
 

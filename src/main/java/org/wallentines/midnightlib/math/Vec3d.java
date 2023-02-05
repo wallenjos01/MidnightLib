@@ -1,6 +1,8 @@
 package org.wallentines.midnightlib.math;
 
-import org.wallentines.midnightlib.config.serialization.InlineSerializer;
+import org.wallentines.mdcfg.serializer.InlineSerializer;
+import org.wallentines.mdcfg.serializer.ObjectSerializer;
+import org.wallentines.mdcfg.serializer.Serializer;
 
 public class Vec3d {
     private final double[] data;
@@ -84,37 +86,13 @@ public class Vec3d {
     }
 
 
-    public static final InlineSerializer<Vec3d> SERIALIZER = new InlineSerializer<Vec3d>() {
-        @Override
-        public Vec3d deserialize(String s) {
-            return parse(s);
-        }
-
-        @Override
-        public String serialize(Vec3d object) {
-            return object.toString();
-        }
-
-        @Override
-        public boolean canDeserialize(String s) {
-            if(s != null && s.contains(",")) {
-
-                String[] ss = s.split(",");
-                if(ss.length < 3) return false;
-
-                try {
-                    for(int i = 0 ; i < 2 ; i++) {
-                        Double.parseDouble(ss[i]);
-                    }
-
-                } catch (NumberFormatException ex) {
-                    return false;
-                }
-                return true;
-            }
-            return false;
-        }
-    };
+    public static final Serializer<Vec3d> SERIALIZER = InlineSerializer.of(Object::toString, Vec3d::parse).or(
+        ObjectSerializer.create(
+            Serializer.DOUBLE.entry("x", Vec3d::getX),
+            Serializer.DOUBLE.entry("y", Vec3d::getY),
+            Serializer.DOUBLE.entry("z", Vec3d::getZ),
+            Vec3d::new
+        ));
 
 
 }

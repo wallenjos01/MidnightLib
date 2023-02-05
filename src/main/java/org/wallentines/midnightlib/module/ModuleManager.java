@@ -1,6 +1,6 @@
 package org.wallentines.midnightlib.module;
 
-import org.wallentines.midnightlib.config.ConfigSection;
+import org.wallentines.mdcfg.ConfigSection;
 import org.wallentines.midnightlib.event.Event;
 import org.wallentines.midnightlib.event.HandlerList;
 import org.wallentines.midnightlib.registry.Identifier;
@@ -10,13 +10,14 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.*;
 
+@SuppressWarnings("unused")
 public class ModuleManager<T, M extends Module<T>> {
 
     private static final Logger LOGGER = LogManager.getLogger("ModuleManager");
 
     private final String defaultNamespace;
 
-    private final Registry<M> loaded = new Registry<>();
+    private final Registry<M> loaded;
     private final HashMap<Class<? extends M>, Identifier> idsByClass = new HashMap<>();
     private final HashMap<Identifier, Set<Identifier>> dependents = new HashMap<>();
 
@@ -30,6 +31,7 @@ public class ModuleManager<T, M extends Module<T>> {
 
     public ModuleManager(String defaultNamespace) {
         this.defaultNamespace = defaultNamespace;
+        this.loaded = new Registry<>(defaultNamespace);
     }
 
     public int loadAll(ConfigSection section, T data, Registry<ModuleInfo<T, M>> registry) {
@@ -43,7 +45,7 @@ public class ModuleManager<T, M extends Module<T>> {
         int count = 0;
         for(String key : section.getKeys()) {
 
-            if(!section.has(key, ConfigSection.class)) continue;
+            if(!section.hasSection(key)) continue;
 
             Identifier id = Identifier.parseOrDefault(key, defaultNamespace);
 

@@ -1,5 +1,6 @@
 package org.wallentines.midnightlib.config.serialization;
 
+@Deprecated
 public class Functions {
 
 

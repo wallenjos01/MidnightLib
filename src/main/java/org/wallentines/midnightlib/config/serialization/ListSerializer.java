@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+@Deprecated
 public class ListSerializer<T, O> implements Serializer<Collection<T>, Collection<O>> {
 
     private final Serializer<T, O> base;

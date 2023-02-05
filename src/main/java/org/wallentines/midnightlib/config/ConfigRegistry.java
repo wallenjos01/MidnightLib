@@ -2,7 +2,6 @@ package org.wallentines.midnightlib.config;
 
 import org.wallentines.midnightlib.config.serialization.ConfigSerializer;
 import org.wallentines.midnightlib.config.serialization.InlineSerializer;
-import org.wallentines.midnightlib.math.*;
 import org.wallentines.midnightlib.registry.Identifier;
 
 import java.io.File;
@@ -11,6 +10,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
+@Deprecated
 @SuppressWarnings("unused")
 public class ConfigRegistry {
 
@@ -23,7 +23,7 @@ public class ConfigRegistry {
     private final HashMap<String, Integer> providersByExtension = new HashMap<>();
     private ConfigProvider defaultProvider;
     private String defaultNamespace = "midnight";
-    private Identifier.Serializer idSerializer = new Identifier.Serializer(defaultNamespace);
+    private org.wallentines.mdcfg.serializer.InlineSerializer<Identifier> idSerializer = Identifier.serializer(defaultNamespace);
 
     public ConfigProvider getDefaultProvider() {
         if(defaultProvider == null) {
@@ -131,7 +131,7 @@ public class ConfigRegistry {
         return defaultNamespace;
     }
 
-    public Identifier.Serializer getIdSerializer() {
+    public org.wallentines.mdcfg.serializer.InlineSerializer<Identifier> getIdSerializer() {
         return idSerializer;
     }
 
@@ -140,17 +140,17 @@ public class ConfigRegistry {
     public void setupDefaults(String defaultNamespace, ConfigProvider provider) {
 
         this.defaultNamespace = defaultNamespace;
-        this.idSerializer = new Identifier.Serializer(defaultNamespace);
+        this.idSerializer = Identifier.serializer(defaultNamespace);
 
         setDefaultProvider(registerProvider(provider));
 
-        registerInlineSerializer(Identifier.class, idSerializer);
-        registerInlineSerializer(Vec3d.class, Vec3d.SERIALIZER);
-        registerInlineSerializer(Vec3i.class, Vec3i.SERIALIZER);
-        registerInlineSerializer(Vec2d.class, Vec2d.SERIALIZER);
-        registerInlineSerializer(Vec2i.class, Vec2i.SERIALIZER);
-        registerInlineSerializer(Region.class, Region.SERIALIZER);
-        registerInlineSerializer(Color.class, Color.SERIALIZER);
+        //registerInlineSerializer(Identifier.class, idSerializer);
+        //registerInlineSerializer(Vec3d.class, Vec3d.SERIALIZER);
+        //registerInlineSerializer(Vec3i.class, Vec3i.SERIALIZER);
+        //registerInlineSerializer(Vec2d.class, Vec2d.SERIALIZER);
+        //registerInlineSerializer(Vec2i.class, Vec2i.SERIALIZER);
+        //registerInlineSerializer(Region.class, Region.SERIALIZER);
+        //registerInlineSerializer(Color.class, Color.SERIALIZER);
         registerInlineSerializer(UUID.class, UUID_SERIALIZER);
     }
 

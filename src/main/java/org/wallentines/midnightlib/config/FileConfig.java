@@ -5,6 +5,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.File;
 
+@Deprecated
 public class FileConfig {
 
     private static final Logger LOGGER = LogManager.getLogger("FileConfig");

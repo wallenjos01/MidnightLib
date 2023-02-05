@@ -1,6 +1,8 @@
 package org.wallentines.midnightlib.math;
 
-import org.wallentines.midnightlib.config.serialization.InlineSerializer;
+import org.wallentines.mdcfg.serializer.InlineSerializer;
+import org.wallentines.mdcfg.serializer.ObjectSerializer;
+import org.wallentines.mdcfg.serializer.Serializer;
 
 public class Vec2i {
     private final int[] data;
@@ -86,16 +88,11 @@ public class Vec2i {
         return false;
     }
 
-    public static final InlineSerializer<Vec2i> SERIALIZER = new InlineSerializer<Vec2i>() {
-        @Override
-        public Vec2i deserialize(String s) {
-            return parse(s);
-        }
-
-        @Override
-        public String serialize(Vec2i object) {
-            return object.toString();
-        }
-    };
+    public static final Serializer<Vec2i> SERIALIZER = InlineSerializer.of(Object::toString, Vec2i::parse).or(
+            ObjectSerializer.create(
+                    Serializer.INT.entry("x", Vec2i::getX),
+                    Serializer.INT.entry("y", Vec2i::getY),
+                    Vec2i::new
+            ));
 }
 

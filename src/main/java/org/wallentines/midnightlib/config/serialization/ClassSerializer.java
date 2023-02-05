@@ -5,6 +5,7 @@ import org.wallentines.midnightlib.config.ConfigSection;
 
 import java.util.function.Function;
 
+@Deprecated
 public class ClassSerializer<T> implements Serializer<T, Object> {
 
     private final Class<T> clazz;

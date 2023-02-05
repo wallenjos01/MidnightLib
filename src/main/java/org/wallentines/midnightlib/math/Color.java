@@ -1,7 +1,10 @@
 package org.wallentines.midnightlib.math;
 
-import org.wallentines.midnightlib.config.serialization.InlineSerializer;
+import org.wallentines.mdcfg.serializer.InlineSerializer;
+import org.wallentines.mdcfg.serializer.ObjectSerializer;
+import org.wallentines.mdcfg.serializer.Serializer;
 
+@SuppressWarnings("unused")
 public class Color {
 
     private static final Color[] FOUR_BIT_COLORS = new Color[]{new Color(0, 0, 0), new Color(0, 0, 170), new Color(0, 170, 0), new Color(0, 170, 170), new Color(170, 0, 0), new Color(170, 0, 170), new Color(255, 170, 0), new Color(170, 170, 170), new Color(85, 85, 85), new Color(85, 85, 255), new Color(85, 255, 85), new Color(85, 255, 255), new Color(255, 85, 85), new Color(255, 85, 255), new Color(255, 255, 85), new Color(255, 255, 255)};
@@ -47,6 +50,18 @@ public class Color {
         this.red = r;
         this.green = g;
         this.blue = b;
+    }
+
+    public int getRed() {
+        return red;
+    }
+
+    public int getGreen() {
+        return green;
+    }
+
+    public int getBlue() {
+        return blue;
     }
 
     public String toHex() {
@@ -142,6 +157,14 @@ public class Color {
 
     public static final Color WHITE = new Color(16777215);
 
-    public static final InlineSerializer<Color> SERIALIZER = InlineSerializer.of(Color::toHex, Color::new);
+    public static final Serializer<Color> SERIALIZER =
+            InlineSerializer.of(Color::toHex, Color::new).or(
+            ObjectSerializer.create(
+                    Serializer.INT.entry("red", Color::getRed),
+                    Serializer.INT.entry("green", Color::getGreen),
+                    Serializer.INT.entry("blue", Color::getBlue),
+                    Color::new
+            )
+    );
 }
 

@@ -1,6 +1,10 @@
 package org.wallentines.midnightlib.math;
 
-import org.wallentines.midnightlib.config.serialization.InlineSerializer;
+import org.wallentines.mdcfg.serializer.InlineSerializer;
+import org.wallentines.mdcfg.serializer.ObjectSerializer;
+import org.wallentines.mdcfg.serializer.Serializer;
+
+import java.util.Objects;
 
 public class Region {
 
@@ -39,22 +43,25 @@ public class Region {
         return isWithin(new Vec3d(vector.getX(), vector.getY(), vector.getZ()));
     }
 
-    public static final InlineSerializer<Region> SERIALIZER = new InlineSerializer<Region>() {
-        @Override
-        public Region deserialize(String s) {
+    public String toString() {
+        return lower.toString() + ";" + extent.toString();
+    }
 
-            String[] ss = s.split(";");
+    public static Region parse(String s) {
 
-            Vec3d lower = Vec3d.parse(ss[0]);
-            Vec3d extent = Vec3d.parse(ss[1]);
+        String[] ss = s.split(";");
 
-            return new Region(lower, extent);
-        }
+        Vec3d lower = Vec3d.parse(ss[0]);
+        Vec3d extent = Vec3d.parse(ss[1]);
 
-        @Override
-        public String serialize(Region object) {
-            return object.lower.toString() + ";" + object.extent.toString();
-        }
-    };
+        return new Region(lower, extent);
+    }
+
+    public static final Serializer<Region> SERIALIZER = InlineSerializer.of(Objects::toString, Region::parse).or(
+            ObjectSerializer.create(
+                    Vec3d.SERIALIZER.entry("position", Region::getLowerBound),
+                    Vec3d.SERIALIZER.entry("extent", Region::getExtent),
+                    Region::new
+            ));
 
 }

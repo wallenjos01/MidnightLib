@@ -8,6 +8,7 @@ import org.wallentines.midnightlib.config.ConfigSection;
 import java.util.*;
 import java.util.function.Function;
 
+@Deprecated
 @SuppressWarnings({"DuplicatedCode", "unused"})
 public interface ConfigSerializer<T> extends Serializer<T, ConfigSection> {
 
@@ -30,7 +31,7 @@ public interface ConfigSerializer<T> extends Serializer<T, ConfigSection> {
     @Deprecated
     default Serializer<T, Object> toRaw() {
 
-        return new Serializer<T, Object>() {
+        return new Serializer<>() {
             @Override
             public Object serialize(T value) {
                 return value == null ? null : ConfigSerializer.this.serialize(value);
@@ -39,7 +40,8 @@ public interface ConfigSerializer<T> extends Serializer<T, ConfigSection> {
             @Override
             public T deserialize(Object object) {
 
-                if(!(object instanceof ConfigSection)) throw new IllegalArgumentException("Object must be a ConfigSection!");
+                if (!(object instanceof ConfigSection))
+                    throw new IllegalArgumentException("Object must be a ConfigSection!");
                 return ConfigSerializer.this.deserialize((ConfigSection) object);
             }
 
@@ -148,7 +150,7 @@ public interface ConfigSerializer<T> extends Serializer<T, ConfigSection> {
     }
 
     static <T> ConfigSerializer<T> of(Function<T, ConfigSection> serialize, Function<ConfigSection, T> deserialize) {
-        return new ConfigSerializer<T>() {
+        return new ConfigSerializer<>() {
             @Override
             public T deserialize(ConfigSection section) {
                 return deserialize.apply(section);
@@ -162,7 +164,7 @@ public interface ConfigSerializer<T> extends Serializer<T, ConfigSection> {
     }
 
     static <T> ConfigSerializer<T> of(Function<T, ConfigSection> serialize, Function<ConfigSection, T> deserialize, Function<ConfigSection, Boolean> canDeserialize) {
-        return new ConfigSerializer<T>() {
+        return new ConfigSerializer<>() {
             @Override
             public T deserialize(ConfigSection section) {
                 return deserialize.apply(section);
@@ -937,7 +939,7 @@ public interface ConfigSerializer<T> extends Serializer<T, ConfigSection> {
 
         private final Function<Object, O> converter;
 
-        private T defaultValue = null;
+        private T defaultValue;
         private boolean isOptional = false;
 
         public BasicEntry(String key, Serializer<T, O> serializer, Function<C, T> getter, Function<Object, O> converter, T defaultValue) {
@@ -975,10 +977,12 @@ public interface ConfigSerializer<T> extends Serializer<T, ConfigSection> {
         @Override
         public T parse(ConfigSection section) {
             Object o = section.get(key);
-            if(o == null && isOptional) {
-                return defaultValue;
+            if(o != null) {
+                return serializer.deserialize(converter.apply(o));
             }
-            return serializer.deserialize(converter.apply(o));
+
+            if(!isOptional) throw new IllegalStateException("Unable to parse entry! Key " + key + " is missing!");
+            return defaultValue;
         }
 
         @Override
@@ -992,6 +996,7 @@ public interface ConfigSerializer<T> extends Serializer<T, ConfigSection> {
             if(obj == null) return null;
             return serializer.serialize(obj);
         }
+
     }
 
     @Deprecated

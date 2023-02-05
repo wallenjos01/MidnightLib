@@ -1,6 +1,9 @@
 package org.wallentines.midnightlib.requirement;
 
-import org.wallentines.midnightlib.config.ConfigSection;
+
+import org.wallentines.mdcfg.serializer.ObjectSerializer;
+import org.wallentines.mdcfg.serializer.Serializer;
+import org.wallentines.midnightlib.registry.RegistryBase;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -27,9 +30,22 @@ public class MultiRequirement<T> extends Requirement<T> {
         return false;
     }
 
-    static ConfigSection serialize(MultiRequirement<?> req) {
+    public boolean allowAny() {
+        return any;
+    }
 
-        return new ConfigSection().with("any", req.any).with("values", req.requirements);
+    public List<Requirement<T>> getRequirements() {
+        return requirements;
+    }
+
+    public static <T> Serializer<MultiRequirement<T>> multiSerializer(RegistryBase<?, RequirementType<T>> registry) {
+
+        return ObjectSerializer.create(
+                Serializer.BOOLEAN.entry("any", req -> req.any),
+                Requirement.serializer(registry).listOf().entry("values", req -> req.requirements),
+                MultiRequirement::new
+        );
+
     }
 
 }

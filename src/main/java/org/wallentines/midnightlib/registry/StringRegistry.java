@@ -1,6 +1,7 @@
 package org.wallentines.midnightlib.registry;
 
-import org.wallentines.midnightlib.config.serialization.InlineSerializer;
+
+import org.wallentines.mdcfg.serializer.InlineSerializer;
 
 public class StringRegistry<T> extends RegistryBase<String ,T> {
 

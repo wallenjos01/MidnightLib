@@ -1,9 +1,8 @@
 package org.wallentines.midnightlib.config.serialization;
 
-import org.wallentines.midnightlib.config.ConfigSection;
-
 import java.util.function.Function;
 
+@Deprecated
 public interface InlineSerializer<T> extends Serializer<T, String> {
 
     T deserialize(String s);
@@ -48,7 +47,7 @@ public interface InlineSerializer<T> extends Serializer<T, String> {
 
 
     static <T> InlineSerializer<T> of(Function<T, String> serialize, Function<String, T> deserialize) {
-        return new InlineSerializer<T>() {
+        return new InlineSerializer<>() {
             @Override
             public T deserialize(String s) {
                 return deserialize.apply(s);
@@ -62,7 +61,7 @@ public interface InlineSerializer<T> extends Serializer<T, String> {
     }
 
     static <T> InlineSerializer<T> of(Function<T, String> serialize, Function<String, T> deserialize, Function<String, Boolean> canDeserialize) {
-        return new InlineSerializer<T>() {
+        return new InlineSerializer<>() {
             @Override
             public T deserialize(String s) {
                 return deserialize.apply(s);

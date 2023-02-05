@@ -6,6 +6,7 @@ import org.wallentines.midnightlib.config.serialization.InlineSerializer;
 
 import java.util.*;
 
+@Deprecated
 @SuppressWarnings("unused")
 public class ConfigSection {
     private final ConfigRegistry reg;
@@ -118,7 +119,7 @@ public class ConfigSection {
 
         return convert(out, clazz);
     }
-
+    
     public Object getOrDefault(String key, Object def) {
 
         Integer index = indicesByKey.get(key);
@@ -300,6 +301,7 @@ public class ConfigSection {
             out.entries.add(val);
         }
 
+        out.keys.addAll(keys);
         out.indicesByKey.putAll(indicesByKey);
         return out;
     }
@@ -393,5 +395,22 @@ public class ConfigSection {
         return reg.getDefaultProvider().saveToString(this);
     }
 
+    @Override
+    public boolean equals(Object obj) {
+
+        if(!(obj instanceof ConfigSection)) return false;
+        ConfigSection other = (ConfigSection) obj;
+
+        if(other.keys.size() != keys.size()) return false;
+        if(other.entries.size() != entries.size()) return false;
+
+        for(String key : keys) {
+
+            Object value = other.indicesByKey.get(key);
+            if(value == null || !value.equals(indicesByKey.get(key))) return false;
+        }
+
+        return true;
+    }
 }
 

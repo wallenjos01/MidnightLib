@@ -9,6 +9,7 @@ import org.apache.logging.log4j.Logger;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 
+@Deprecated
 public class JsonWrapper {
 
     private static final Logger LOGGER = LogManager.getLogger("JSON Wrapper");

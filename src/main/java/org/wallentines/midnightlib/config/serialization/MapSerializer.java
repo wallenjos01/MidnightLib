@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
+@Deprecated
 public class MapSerializer<K,V,O> implements Serializer<Map<K,V>, Map<String, O>> {
 
     private final Serializer<K, String> keySerializer;

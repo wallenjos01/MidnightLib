@@ -1,6 +1,7 @@
 package org.wallentines.midnightlib.registry;
 
-import org.wallentines.midnightlib.config.serialization.InlineSerializer;
+
+import org.wallentines.mdcfg.serializer.InlineSerializer;
 
 @SuppressWarnings("unused")
 public class Identifier {
@@ -84,28 +85,8 @@ public class Identifier {
         return toString().hashCode();
     }
 
-    public static class Serializer implements InlineSerializer<Identifier> {
-
-        private final String defaultNamespace;
-
-        public Serializer(String defaultNamespace) {
-            this.defaultNamespace = defaultNamespace;
-        }
-
-        @Override
-        public Identifier deserialize(String s) {
-            return parseOrDefault(s, defaultNamespace);
-        }
-
-        @Override
-        public String serialize(Identifier object) {
-            return object.toString();
-        }
-
-        @Override
-        public boolean canDeserialize(String s) {
-            return s.length() > 0 && (!s.contains(":") || isValid(s.split(":")));
-        }
+    public static InlineSerializer<Identifier> serializer(String defaultNamespace) {
+        return InlineSerializer.of(Identifier::toString, str -> Identifier.parseOrDefault(str, defaultNamespace));
     }
 
 }
