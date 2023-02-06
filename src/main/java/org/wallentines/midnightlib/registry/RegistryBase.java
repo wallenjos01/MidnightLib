@@ -106,23 +106,23 @@ public abstract class RegistryBase<I, T> implements Iterable<T> {
         size = 0;
     }
 
-    public T remove(T value) {
-
-        Integer index = indexByValue.get(value);
-
-        if(index == null || index < 0) {
-            throw new IllegalStateException("Attempt to remove unregistered item!");
-        }
-
-        return removeAtIndex(index);
-    }
-
-    public T removeById(I id) {
+    public T remove(I id) {
 
         Integer index = indexById.get(id);
 
         if(index == null || index < 0) {
             throw new IllegalStateException("Attempt to remove item with unregistered ID!");
+        }
+
+        return removeAtIndex(index);
+    }
+
+    public T removeValue(T value) {
+
+        Integer index = indexByValue.get(value);
+
+        if(index == null || index < 0) {
+            throw new IllegalStateException("Attempt to remove unregistered item!");
         }
 
         return removeAtIndex(index);
@@ -135,7 +135,9 @@ public abstract class RegistryBase<I, T> implements Iterable<T> {
         }
 
         T out = values.remove(index);
-        ids.remove(index);
+        I id = ids.remove(index);
+        indexById.remove(id);
+        indexByValue.remove(out);
 
         size--;
 
@@ -184,7 +186,4 @@ public abstract class RegistryBase<I, T> implements Iterable<T> {
             }
         };
     }
-
-
-
 }

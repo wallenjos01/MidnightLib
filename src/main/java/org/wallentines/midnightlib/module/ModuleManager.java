@@ -199,7 +199,7 @@ public class ModuleManager<T, M extends Module<T>> {
 
         unloadWithDependents(mod, moduleId);
 
-        loaded.removeById(moduleId);
+        loaded.remove(moduleId);
     }
 
     public void unloadAll() {
