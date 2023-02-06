@@ -9,11 +9,19 @@ import java.util.Objects;
 public class Region {
 
     private final Vec3d lower;
-    private final Vec3d extent;
+    private final Vec3d upper;
 
-    public Region(Vec3d lower, Vec3d extent) {
-        this.lower = lower;
-        this.extent = extent;
+    public Region(Vec3d point1, Vec3d point2) {
+        this.lower = new Vec3d(
+                Math.min(point1.getX(), point2.getX()),
+                Math.min(point1.getY(), point2.getY()),
+                Math.min(point1.getZ(), point2.getZ())
+            );
+        this.upper = new Vec3d(
+                Math.max(point1.getX(), point2.getX()),
+                Math.max(point1.getY(), point2.getY()),
+                Math.max(point1.getZ(), point2.getZ())
+        );
     }
 
     public Vec3d getLowerBound() {
@@ -21,16 +29,14 @@ public class Region {
     }
 
     public Vec3d getUpperBound() {
-        return lower.add(extent);
+        return upper;
     }
 
     public Vec3d getExtent() {
-        return extent;
+        return upper.subtract(lower);
     }
 
     public boolean isWithin(Vec3d vector) {
-
-        Vec3d upper = getUpperBound();
 
         return vector.getX() >= lower.getX() && vector.getX() < upper.getX() &&
                vector.getY() >= lower.getY() && vector.getY() < upper.getY() &&
@@ -44,7 +50,7 @@ public class Region {
     }
 
     public String toString() {
-        return lower.toString() + ";" + extent.toString();
+        return lower.toString() + ";" + upper.toString();
     }
 
     public static Region parse(String s) {

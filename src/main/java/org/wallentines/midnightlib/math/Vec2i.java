@@ -4,23 +4,33 @@ import org.wallentines.mdcfg.serializer.InlineSerializer;
 import org.wallentines.mdcfg.serializer.ObjectSerializer;
 import org.wallentines.mdcfg.serializer.Serializer;
 
+import java.util.Objects;
+
 public class Vec2i {
-    private final int[] data;
+    private final int x;
+    private final int y;
 
     public Vec2i(int x, int y) {
-        this.data = new int[]{x, y};
+        this.x = x;
+        this.y = y;
     }
 
     public int getX() {
-        return this.data[0];
+        return this.x;
     }
 
     public int getY() {
-        return this.data[1];
+        return this.y;
     }
 
-    public double distance(Vec2i vec2) {
-        return Math.sqrt(Math.pow((this.getX() - vec2.getX()), 2) + Math.pow((this.getY() - vec2.getY()), 2));
+    public double distance(Vec2i other) {
+        return Math.sqrt(distanceSquared(other));
+    }
+
+    public int distanceSquared(Vec2i other) {
+        int distX = this.getX() - other.getX();
+        int distY = this.getY() - other.getY();
+        return distX * distX + distY * distY;
     }
 
     public static Vec2i parse(String str) {
@@ -45,43 +55,44 @@ public class Vec2i {
     }
 
     public Vec2i add(int i) {
-        return new Vec2i(data[0] + i, data[1] + i);
-    }
-
-    public Vec2i multiply(int i) {
-        return new Vec2i(data[0] * i, data[1] * i);
-    }
-
-    public Vec2i add(Vec2i i) {
-        return new Vec2i(data[0] + i.data[0], data[1] + i.data[1]);
-    }
-
-    public Vec2i multiply(Vec2i i) {
-        return new Vec2i(data[0] * i.data[0], data[1] * i.data[1]);
+        return new Vec2i(x + i, y + i);
     }
 
     public Vec2i subtract(int i) {
-        return new Vec2i(data[0] - i, data[1] - i);
+        return new Vec2i(x - i, y - i);
     }
 
-    public Vec2i subtract(Vec2i i) {
-        return new Vec2i(data[0] - i.data[0], data[1] - i.data[1]);
+    public Vec2i multiply(int i) {
+        return new Vec2i(x * i, y * i);
     }
+
+    public Vec2i add(Vec2i other) {
+        return new Vec2i(x + other.x, y + other.y);
+    }
+
+    public Vec2i subtract(Vec2i other) {
+        return new Vec2i(x - other.x, y - other.y);
+    }
+
+    public Vec2i multiply(Vec2i other) {
+        return new Vec2i(x * other.x, y * other.y);
+    }
+
 
     @Override
     public int hashCode() {
-        return toString().hashCode();
+        return Objects.hash(x, y);
     }
 
     @Override
     public boolean equals(Object obj) {
 
-        if(obj instanceof Vec3i) {
-            Vec3i other = (Vec3i) obj;
+        if(obj instanceof Vec2i) {
+            Vec2i other = (Vec2i) obj;
             return other.getX() == getX() && other.getY() == getY();
         }
-        if(obj instanceof Vec3d) {
-            Vec3d other = (Vec3d) obj;
+        if(obj instanceof Vec2d) {
+            Vec2d other = (Vec2d) obj;
             return other.getX() == getX() && other.getY() == getY();
         }
 

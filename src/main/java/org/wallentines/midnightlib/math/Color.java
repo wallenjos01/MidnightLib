@@ -85,7 +85,7 @@ public class Color {
     }
 
     public int toDecimal() {
-        return Integer.parseInt(this.toHex().substring(1), 16);
+        return (red << 16) + (green << 8) + blue;
     }
 
     public int toRGBI() {

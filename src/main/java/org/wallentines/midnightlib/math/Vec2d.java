@@ -3,26 +3,34 @@ package org.wallentines.midnightlib.math;
 import org.wallentines.mdcfg.serializer.ObjectSerializer;
 import org.wallentines.mdcfg.serializer.Serializer;
 
+import java.util.Objects;
+
 public class Vec2d {
-    private final double[] data;
+    private final double x;
+    private final double y;
 
     public Vec2d(double x, double y) {
-        this.data = new double[]{x, y};
+        this.x = x;
+        this.y = y;
     }
 
     public double getX() {
-        return this.data[0];
+        return this.x;
     }
 
     public double getY() {
-        return this.data[1];
+        return this.y;
     }
 
 
     public double distance(Vec2d vec2) {
-        double ax = this.getX() - vec2.getX();
-        double ay = this.getY() - vec2.getY();
-        return Math.sqrt(ax * ax + ay * ay);
+        return Math.sqrt(distanceSquared(vec2));
+    }
+
+    public double distanceSquared(Vec2d other) {
+        double distX = this.getX() - other.getX();
+        double distY = this.getY() - other.getY();
+        return distX * distX + distY * distY;
     }
 
     public boolean equals(Object obj) {
@@ -39,7 +47,7 @@ public class Vec2d {
 
     public Vec2i truncate() {
 
-        return new Vec2i(truncate(data[0]), truncate(data[1]));
+        return new Vec2i(truncate(x), truncate(y));
     }
 
     @Override
@@ -63,20 +71,33 @@ public class Vec2d {
 
     }
 
+    @Override
+    public int hashCode() {
+        return Objects.hash(x, y);
+    }
+
     public Vec2d add(double i) {
-        return new Vec2d(data[0] + i, data[1] + i);
+        return new Vec2d(x + i, y + i);
+    }
+
+    public Vec2d subtract(double i) {
+        return new Vec2d(x - i, y - i);
     }
 
     public Vec2d multiply(double i) {
-        return new Vec2d(data[0] * i, data[1] * i);
+        return new Vec2d(x * i, y * i);
     }
 
-    public Vec2d add(Vec2d i) {
-        return new Vec2d(data[0] + i.data[0], data[1] + i.data[1]);
+    public Vec2d add(Vec2d other) {
+        return new Vec2d(x + other.x, y + other.y);
     }
 
-    public Vec2d multiply(Vec2d i) {
-        return new Vec2d(data[0] * i.data[0], data[1] * i.data[1]);
+    public Vec2d subtract(Vec2d other) {
+        return new Vec2d(x - other.x, y - other.y);
+    }
+
+    public Vec2d multiply(Vec2d other) {
+        return new Vec2d(x * other.x, y * other.y);
     }
 
     public static final Serializer<Vec2d> SERIALIZER = org.wallentines.mdcfg.serializer.InlineSerializer.of(Object::toString, Vec2d::parse).or(

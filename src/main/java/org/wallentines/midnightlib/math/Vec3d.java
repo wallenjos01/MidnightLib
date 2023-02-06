@@ -5,29 +5,37 @@ import org.wallentines.mdcfg.serializer.ObjectSerializer;
 import org.wallentines.mdcfg.serializer.Serializer;
 
 public class Vec3d {
-    private final double[] data;
+    private final double x;
+    private final double y;
+    private final double z;
 
     public Vec3d(double x, double y, double z) {
-        this.data = new double[]{x, y, z};
+        this.x = x;
+        this.y = y;
+        this.z = z;
     }
 
     public double getX() {
-        return this.data[0];
+        return this.x;
     }
 
     public double getY() {
-        return this.data[1];
+        return this.y;
     }
 
     public double getZ() {
-        return this.data[2];
+        return this.z;
     }
 
-    public double distance(Vec3d vec2) {
-        double ax = this.getX() - vec2.getX();
-        double ay = this.getY() - vec2.getY();
-        double az = this.getZ() - vec2.getZ();
-        return Math.sqrt(ax * ax + ay * ay + az * az);
+    public double distance(Vec3d other) {
+        return Math.sqrt(distanceSquared(other));
+    }
+
+    public double distanceSquared(Vec3d other) {
+        double ax = this.getX() - other.getX();
+        double ay = this.getY() - other.getY();
+        double az = this.getZ() - other.getZ();
+        return ax * ax + ay * ay + az * az;
     }
 
     public boolean equals(Object obj) {
@@ -44,7 +52,7 @@ public class Vec3d {
 
     public Vec3i truncate() {
 
-        return new Vec3i(truncate(data[0]), truncate(data[1]), truncate(data[2]));
+        return new Vec3i(truncate(x), truncate(y), truncate(z));
     }
 
     @Override
@@ -70,19 +78,25 @@ public class Vec3d {
     }
 
     public Vec3d add(double i) {
-        return new Vec3d(data[0] + i, data[1] + i, data[2] + i);
+        return new Vec3d(x + i, y + i, z + i);
     }
 
+    public Vec3d subtract(int i) {
+        return new Vec3d(x - i, y - i, z - i);
+    }
     public Vec3d multiply(double i) {
-        return new Vec3d(data[0] * i, data[1] * i, data[2] * i);
+        return new Vec3d(x * i, y * i, z * i);
     }
 
     public Vec3d add(Vec3d i) {
-        return new Vec3d(data[0] + i.data[0], data[1] + i.data[1], data[2] + i.data[2]);
+        return new Vec3d(x + i.x, y + i.y, z + i.z);
     }
 
+    public Vec3d subtract(Vec3d other) {
+        return new Vec3d(x - other.x, y - other.y, z - other.z);
+    }
     public Vec3d multiply(Vec3d i) {
-        return new Vec3d(data[0] * i.data[0], data[1] * i.data[1], data[2] * i.data[2]);
+        return new Vec3d(x * i.x, y * i.y, z * i.z);
     }
 
 
@@ -96,4 +110,3 @@ public class Vec3d {
 
 
 }
-

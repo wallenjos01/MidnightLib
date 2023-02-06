@@ -5,26 +5,37 @@ import org.wallentines.mdcfg.serializer.ObjectSerializer;
 import org.wallentines.mdcfg.serializer.Serializer;
 
 public class Vec3i {
-    private final int[] data;
+    private final int x;
+    private final int y;
+    private final int z;
 
     public Vec3i(int x, int y, int z) {
-        this.data = new int[]{x, y, z};
+        this.x = x;
+        this.y = y;
+        this.z = z;
     }
 
     public int getX() {
-        return this.data[0];
+        return this.x;
     }
 
     public int getY() {
-        return this.data[1];
+        return this.y;
     }
 
     public int getZ() {
-        return this.data[2];
+        return this.z;
     }
 
-    public double distance(Vec3i vec2) {
-        return Math.sqrt(Math.pow(this.getX() - vec2.getX(), 2) + Math.pow(this.getY() - vec2.getY(), 2) + Math.pow(this.getZ() - vec2.getZ(), 2));
+    public double distance(Vec3i other) {
+        return Math.sqrt(distanceSquared(other));
+    }
+
+    public int distanceSquared(Vec3i other) {
+        int distX = this.getX() - other.getX();
+        int distY = this.getY() - other.getY();
+        int distZ = this.getZ() - other.getZ();
+        return distX * distX + distY * distY + distZ * distZ;
     }
 
     public static Vec3i parse(String str) {
@@ -50,27 +61,27 @@ public class Vec3i {
     }
 
     public Vec3i add(int i) {
-        return new Vec3i(data[0] + i, data[1] + i, data[2] + i);
-    }
-
-    public Vec3i multiply(int i) {
-        return new Vec3i(data[0] * i, data[1] * i, data[2] * i);
-    }
-
-    public Vec3i add(Vec3i i) {
-        return new Vec3i(data[0] + i.data[0], data[1] + i.data[1], data[2] + i.data[2]);
-    }
-
-    public Vec3i multiply(Vec3i i) {
-        return new Vec3i(data[0] * i.data[0], data[1] * i.data[1], data[2] * i.data[2]);
+        return new Vec3i(x + i, y + i, z + i);
     }
 
     public Vec3i subtract(int i) {
-        return new Vec3i(data[0] - i, data[1] - i, data[2] - i);
+        return new Vec3i(x - i, y - i, z - i);
     }
 
-    public Vec3i subtract(Vec3i i) {
-        return new Vec3i(data[0] - i.data[0], data[1] - i.data[1], data[2] - i.data[2]);
+    public Vec3i multiply(int i) {
+        return new Vec3i(x * i, y * i, z * i);
+    }
+
+    public Vec3i add(Vec3i other) {
+        return new Vec3i(x + other.x, y + other.y, z + other.z);
+    }
+
+    public Vec3i subtract(Vec3i other) {
+        return new Vec3i(x - other.x, y - other.y, z - other.z);
+    }
+
+    public Vec3i multiply(Vec3i other) {
+        return new Vec3i(x * other.x, y * other.y, z * other.z);
     }
 
     @Override

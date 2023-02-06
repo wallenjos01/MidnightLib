@@ -4,15 +4,15 @@ import java.util.HashMap;
 
 public class Event {
 
-    private static final HashMap<Class<? extends Event>, HandlerList<? extends Event>> events = new HashMap<>();
+    private static final HashMap<Class<?>, HandlerList<?>> events = new HashMap<>();
 
-    public static <T extends Event> void register(Class<T> ev, Object listener, EventHandler<T> handler) {
+    public static <T> void register(Class<T> ev, Object listener, EventHandler<T> handler) {
 
         register(ev, listener, 50, handler);
     }
 
     @SuppressWarnings("unchecked")
-    public static <T extends Event> void register(Class<T> ev, Object listener, int priority, EventHandler<T> handler) {
+    public static <T> void register(Class<T> ev, Object listener, int priority, EventHandler<T> handler) {
 
         if(listener == null || handler == null) return;
 
@@ -24,7 +24,7 @@ public class Event {
     }
 
     @SuppressWarnings("unchecked")
-    public static <T extends Event> void invoke(T event) {
+    public static <T> void invoke(T event) {
 
         if(event == null) return;
 
@@ -42,20 +42,11 @@ public class Event {
         }
     }
 
-    public static void unregisterAll(Class<? extends Event> event) {
+    public static void unregisterAll(Class<?> event) {
 
         if(events.containsKey(event)) {
             events.get(event).unregisterAll();
         }
-    }
-
-    protected void cancel() {
-
-        HandlerList<?> handlers = events.get(getClass());
-        if(handlers == null) return;
-
-        handlers.cancel();
-
     }
 
 }

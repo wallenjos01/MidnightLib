@@ -6,13 +6,13 @@ import org.apache.logging.log4j.Logger;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.PriorityQueue;
+import java.util.TreeSet;
 
-public class HandlerList<T extends Event> {
+public class HandlerList<T> {
 
     private static final Logger LOGGER = LogManager.getLogger("Event");
 
-    private final PriorityQueue<WrappedHandler> handlers = new PriorityQueue<>();
+    private final TreeSet<WrappedHandler> handlers = new TreeSet<>(WrappedHandler::compareTo);
 
     private final List<Runnable> waiting = new ArrayList<>();
 
@@ -25,12 +25,7 @@ public class HandlerList<T extends Event> {
 
     public void register(Object listener, int priority, EventHandler<T> handler) {
 
-        WrappedHandler hand = new WrappedHandler();
-        hand.handler = handler;
-        hand.priority = priority;
-        hand.listener = new WeakReference<>(listener);
-
-        run(() -> handlers.add(hand));
+        run(() -> handlers.add(new WrappedHandler(listener, priority, handler)));
     }
 
     public void invoke(T event) {
@@ -38,9 +33,9 @@ public class HandlerList<T extends Event> {
         if(invoking) return;
         invoking = true;
 
-        for(WrappedHandler handler : handlers) {
+        for (WrappedHandler handler : handlers) {
 
-            if(handler.listener.get() == null) return;
+            if (handler.listener.get() == null) return;
 
             try {
                 handler.handler.invoke(event);
@@ -50,7 +45,7 @@ public class HandlerList<T extends Event> {
                 th.printStackTrace();
             }
 
-            if(cancelled) break;
+            if (cancelled) break;
         }
 
         cancelled = false;
@@ -83,13 +78,19 @@ public class HandlerList<T extends Event> {
 
     private class WrappedHandler implements Comparable<WrappedHandler> {
 
-        WeakReference<?> listener;
-        int priority;
-        EventHandler<T> handler;
+        final WeakReference<?> listener;
+        final int priority;
+        final EventHandler<T> handler;
+
+        public WrappedHandler(Object listener, int priority, EventHandler<T> handler) {
+            this.listener = new WeakReference<>(listener);
+            this.priority = priority;
+            this.handler = handler;
+        }
 
         @Override
-        public int compareTo(HandlerList<T>.WrappedHandler o) {
-            return priority - o.priority;
+        public int compareTo(WrappedHandler o) {
+            return Integer.compare(priority, o.priority);
         }
     }
 
