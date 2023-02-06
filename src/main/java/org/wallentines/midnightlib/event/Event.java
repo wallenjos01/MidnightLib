@@ -16,9 +16,7 @@ public class Event {
 
         if(listener == null || handler == null) return;
 
-        events.computeIfAbsent(ev, k -> new HandlerList<T>());
-
-        HandlerList<T> list = (HandlerList<T>) events.get(ev);
+        HandlerList<T> list = (HandlerList<T>) events.computeIfAbsent(ev, k -> new HandlerList<T>());
         list.register(listener, priority, handler);
 
     }

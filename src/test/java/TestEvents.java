@@ -3,6 +3,8 @@ import org.junit.jupiter.api.Test;
 import org.wallentines.midnightlib.event.Event;
 import org.wallentines.midnightlib.event.HandlerList;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 public class TestEvents {
 
     private static class TestEvent {
@@ -56,10 +58,17 @@ public class TestEvents {
         Event.invoke(event);
         Assertions.assertEquals("orig", event.value);
 
+        AtomicInteger handled = new AtomicInteger();
 
-        Event.register(TestEvent.class, this, ev -> ev.value = "modified");
+        Event.register(TestEvent.class, this, ev -> {
+            ev.value = "modified";
+            handled.getAndIncrement();
+        });
+        Event.register(TestEvent.class, this, ev -> handled.getAndIncrement());
+
         Event.invoke(event);
         Assertions.assertEquals("modified", event.value);
+        Assertions.assertEquals(2, handled.get()); // Ensure all registered handlers are triggered
 
         Event.unregisterAll(TestEvent.class);
         event = new TestEvent("orig");

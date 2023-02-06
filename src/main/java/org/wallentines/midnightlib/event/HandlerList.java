@@ -2,17 +2,17 @@ package org.wallentines.midnightlib.event;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.wallentines.midnightlib.types.SortedCollection;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.TreeSet;
 
 public class HandlerList<T> {
 
     private static final Logger LOGGER = LogManager.getLogger("Event");
 
-    private final TreeSet<WrappedHandler> handlers = new TreeSet<>(WrappedHandler::compareTo);
+    private final SortedCollection<WrappedHandler> handlers = new SortedCollection<>();
 
     private final List<Runnable> waiting = new ArrayList<>();
 
