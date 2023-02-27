@@ -15,15 +15,19 @@ public abstract class RegistryBase<I, T> implements Iterable<T> {
     private final HashMap<I, Integer> indexById = new HashMap<>();
     private final HashMap<T, Integer> indexByValue = new HashMap<>();
     private int size;
+    private final boolean allowDuplicateValues;
 
+    protected RegistryBase(boolean allowDuplicateValues) {
+        this.allowDuplicateValues = allowDuplicateValues;
+    }
 
     public T register(I id, T value) {
 
         if(ids.contains(id)) {
-            throw new IllegalArgumentException("Attempt to register item with duplicate ID!");
+            throw new IllegalArgumentException("Attempt to register value with duplicate ID!");
         }
-        if(values.contains(value)) {
-            throw new IllegalArgumentException("Attempt to register item twice!");
+        if(!allowDuplicateValues && indexOf(value) != null) {
+            throw new IllegalArgumentException("Attempt to register value twice! (" + value + ")");
         }
 
         ids.add(id);
@@ -58,7 +62,7 @@ public abstract class RegistryBase<I, T> implements Iterable<T> {
             throw new IllegalArgumentException("Value must not be null!");
         }
 
-        Integer index = indexByValue.get(value);
+        Integer index = indexOf(value);
 
         if(index == null || index < 0) {
             return null;
@@ -69,7 +73,10 @@ public abstract class RegistryBase<I, T> implements Iterable<T> {
 
     public Integer indexOf(T value) {
 
-        return indexByValue.get(value);
+        Integer index = indexByValue.get(value);
+        if(index == null || values.get(index) != value) return null;
+
+        return index;
     }
 
     public boolean hasKey(I id) {

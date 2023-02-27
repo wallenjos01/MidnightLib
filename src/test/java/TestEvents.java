@@ -87,11 +87,12 @@ public class TestEvents {
         Assertions.assertEquals("orig", event.value);
 
         handlers.register(this, 2, ev -> ev.value = "default");
+        handlers.register(this, 3, ev -> ev.value = "first");
         handlers.register(this, 3, ev -> ev.value = "priority");
         handlers.register(this, 1, ev -> ev.value = "modified");
 
         handlers.invoke(event);
-        Assertions.assertEquals("priority", event.value);
+        Assertions.assertEquals("first", event.value);
 
     }
 

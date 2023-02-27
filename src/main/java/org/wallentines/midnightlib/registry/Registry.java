@@ -7,6 +7,11 @@ public class Registry<T> extends RegistryBase<Identifier, T> {
     protected final String defaultNamespace;
 
     public Registry(String defaultNamespace) {
+        this(defaultNamespace, false);
+    }
+
+    public Registry(String defaultNamespace, boolean allowDuplicateEntries) {
+        super(allowDuplicateEntries);
         this.defaultNamespace = defaultNamespace;
     }
 
