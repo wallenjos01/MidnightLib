@@ -8,7 +8,16 @@ import java.util.Random;
 public class RandomizedQueue<T> extends AbstractQueue<T> {
 
     private static final Random RANDOM = new Random();
+    private final Random rand;
     private final LinkedList<T> internal = new LinkedList<>();
+
+    public RandomizedQueue() {
+        this.rand = RANDOM;
+    }
+
+    public RandomizedQueue(Random rand) {
+        this.rand = rand;
+    }
 
     @Override
     public Iterator<T> iterator() {
@@ -28,7 +37,7 @@ public class RandomizedQueue<T> extends AbstractQueue<T> {
             return true;
         }
 
-        int index = RANDOM.nextInt(internal.size());
+        int index = rand.nextInt(internal.size());
         internal.add(index, t);
 
         return true;

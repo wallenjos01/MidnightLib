@@ -1,12 +1,22 @@
 package org.wallentines.midnightlib.types;
 
 import java.util.Collection;
+import java.util.Random;
 
 public class RandomizedLoopingQueue<T> extends RandomizedQueue<T> {
 
     private final Collection<T> options;
 
     public RandomizedLoopingQueue(Collection<T> options) {
+
+        if(options.isEmpty()) throw new IllegalArgumentException("Cannot create randomized looping queue with zero options!");
+        this.options = options;
+
+    }
+
+    public RandomizedLoopingQueue(Collection<T> options, Random rand) {
+
+        super(rand);
 
         if(options.isEmpty()) throw new IllegalArgumentException("Cannot create randomized looping queue with zero options!");
         this.options = options;
