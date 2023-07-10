@@ -16,15 +16,18 @@ java.withSourcesJar()
 
 repositories {
     mavenCentral()
+    maven("https://maven.wallentines.org/")
     mavenLocal()
 }
 
 dependencies {
+
     api("org.wallentines:midnightcfg:1.0.0")
-    implementation("org.apache.logging.log4j:log4j-api:2.17.1")
-    implementation("com.google.code.gson:gson:2.9.0")
-    testImplementation("org.junit.jupiter:junit-jupiter-api:5.8.1")
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.8.1")
+
+    implementation("org.slf4j:slf4j-api:2.0.7")
+
+    testImplementation(platform(libs.junit.bom))
+    testImplementation(libs.junit.jupiter)
 }
 
 tasks.test {
