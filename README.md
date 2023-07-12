@@ -1,3 +1,3 @@
 # MidnightLib
 
-A general use Java library including Configuration, Events, and Registries
+A general use Java library including Modules, Events, Registries, and some basic data types
