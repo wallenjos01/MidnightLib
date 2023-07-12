@@ -17,7 +17,6 @@ public class HandlerList<T> {
 
     private final List<Runnable> waiting = new ArrayList<>();
 
-    private boolean cancelled = false;
     private boolean invoking = false;
 
     public void register(Object listener, EventHandler<T> handler) {
@@ -37,27 +36,23 @@ public class HandlerList<T> {
         for (WrappedHandler handler : handlers) {
 
             if (handler.listener.get() == null) return;
-
-            try {
-                handler.handler.invoke(event);
-            } catch (Throwable th) {
-
-                LOGGER.warn("An exception was thrown while an event was being handled!");
-                th.printStackTrace();
-            }
-
-            if (cancelled) break;
+            handle(handler.handler, event);
         }
 
-        cancelled = false;
         invoking = false;
 
         waiting.forEach(Runnable::run);
         waiting.clear();
     }
 
-    public void cancel() {
-        cancelled = true;
+    protected void handle(EventHandler<T> handler, T event) {
+        try {
+            handler.invoke(event);
+        } catch (Throwable th) {
+
+            LOGGER.warn("An exception was thrown while an event was being handled!");
+            th.printStackTrace();
+        }
     }
 
     public void unregisterAll() {
