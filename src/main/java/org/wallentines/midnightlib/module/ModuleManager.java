@@ -135,8 +135,7 @@ public class ModuleManager<T, M extends Module<T>> {
             }
         } catch (Exception ex) {
 
-            LOGGER.warn("An error occurred while attempting to initialize module with ID " + id + "!");
-            ex.printStackTrace();
+            LOGGER.warn("An error occurred while attempting to initialize module with ID " + id + "!", ex);
 
             return false;
         }
@@ -186,8 +185,7 @@ public class ModuleManager<T, M extends Module<T>> {
         try {
             mod.disable();
         } catch (Exception ex) {
-            LOGGER.warn("An exception occurred while disabling a module!");
-            ex.printStackTrace();
+            LOGGER.warn("An exception occurred while disabling a module!", ex);
         }
 
         dependents.remove(moduleId);
