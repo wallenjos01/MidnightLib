@@ -8,6 +8,9 @@ import org.slf4j.LoggerFactory;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * A class for invoking and handling events
@@ -19,9 +22,10 @@ public class HandlerList<T> {
 
     private final SortedCollection<WrappedHandler> handlers = new SortedCollection<>();
 
-    private final List<Runnable> waiting = new ArrayList<>();
-
-    private boolean invoking = false;
+    // To prevent concurrent modification exceptions, calls to register() or unregisterAll() will be deferred if an
+    // event is currently being invoked
+    private final Queue<Runnable> waiting = new ConcurrentLinkedDeque<>();
+    private final AtomicBoolean invoking = new AtomicBoolean(false);
 
     /**
      * Registers a new event handler with the given listener
@@ -51,19 +55,29 @@ public class HandlerList<T> {
      */
     public void invoke(T event) {
 
-        if(invoking) return;
-        invoking = true;
+        run(() -> {
+            invoking.set(true);
 
-        for (WrappedHandler handler : handlers) {
+            // Keep track of all handlers which have been garbage-collected
+            List<WrappedHandler> toRemove = new ArrayList<>();
 
-            if (handler.listener.get() == null) return;
-            handle(handler.handler, event);
-        }
+            for (WrappedHandler handler : handlers) {
+                if (handler.listener.get() == null) {
+                    toRemove.add(handler);
+                    continue;
+                }
+                handle(handler.handler, event);
+            }
 
-        invoking = false;
+            // Remove all handlers which have been garbage-collected
+            handlers.removeAll(toRemove);
 
-        waiting.forEach(Runnable::run);
-        waiting.clear();
+            invoking.set(false);
+
+            while(!waiting.isEmpty()) {
+                waiting.remove().run();
+            }
+        });
     }
 
     /**
@@ -97,7 +111,7 @@ public class HandlerList<T> {
 
     private void run(Runnable run) {
 
-        if(invoking) {
+        if(invoking.get()) {
             waiting.add(run);
         } else {
             run.run();

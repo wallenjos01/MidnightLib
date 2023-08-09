@@ -265,7 +265,7 @@ public class ModuleManager<T, M extends Module<T>> {
         return out;
     }
 
-    public class ModuleEvent extends Event {
+    public class ModuleEvent {
         private final M module;
         private final Identifier id;
 
