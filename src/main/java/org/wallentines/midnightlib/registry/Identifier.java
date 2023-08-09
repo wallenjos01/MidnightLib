@@ -3,6 +3,9 @@ package org.wallentines.midnightlib.registry;
 
 import org.wallentines.mdcfg.serializer.InlineSerializer;
 
+/**
+ * An identifier consisting of a namespace and a path
+ */
 @SuppressWarnings("unused")
 public class Identifier {
 
@@ -12,19 +15,38 @@ public class Identifier {
     private final String namespace;
     private final String path;
 
+    /**
+     * Constructs a new Identifier with the given namespace and path
+     * @param namespace The namespace
+     * @param path The path
+     */
     public Identifier(String namespace, String path) {
         this.namespace = namespace;
         this.path = path;
     }
 
+    /**
+     * Gets the Identifier's namespace
+     * @return The namespace
+     */
     public String getNamespace() {
         return namespace;
     }
 
+    /**
+     * Gets the Identifier's path
+     * @return The path
+     */
     public String getPath() {
         return path;
     }
 
+    /**
+     * Parses an identifier from a string in the format "namespace:path"
+     * @param toParse The string to parse
+     * @return A new identifier
+     * @throws IllegalArgumentException If the string is in the wrong format
+     */
     public static Identifier parse(String toParse) throws IllegalArgumentException {
 
         if(toParse == null) throw EXCEPTION;
@@ -41,11 +63,28 @@ public class Identifier {
         return new Identifier(ss[0], ss[1]);
     }
 
-    public static Identifier parseOrDefault(String toParse, String defaultNamespace) {
+    /**
+     * Parses an identifier from a string, using the given default namespace as a namespace if necessary
+     * @param toParse The string to parse
+     * @param defaultNamespace The default namespace to use if none is found
+     * @return A new identifier
+     * @throws IllegalArgumentException if the string is null or in the wrong format
+     */
+    public static Identifier parseOrDefault(String toParse, String defaultNamespace) throws IllegalArgumentException {
 
         if(toParse == null) throw EXCEPTION;
 
-        String[] ss = toParse.split(":");
+        String[] ss = toParse.strip().split(":");
+
+        // Throw an error if there are too many colons
+        if(ss.length == 0 || ss.length > 2) {
+            throw EXCEPTION;
+        }
+
+        // Throw an error if there is not a valid path
+        if(ss.length == 2 && ss[1].isEmpty()) {
+            throw EXCEPTION;
+        }
 
         return ss.length == 1 ? new Identifier(defaultNamespace, toParse) : new Identifier(ss[0], ss[1]);
     }

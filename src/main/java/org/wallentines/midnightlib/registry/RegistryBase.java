@@ -1,27 +1,45 @@
 package org.wallentines.midnightlib.registry;
 
+import org.jetbrains.annotations.NotNull;
 import org.wallentines.mdcfg.serializer.InlineSerializer;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
+import java.util.*;
 
+/**
+ * An abstract data type for storing values associated with keys. Dy default, values cannot be overwritten
+ * @param <I> The key type
+ * @param <T> The value type
+ */
 public abstract class RegistryBase<I, T> implements Iterable<T> {
 
-    private final ArrayList<I> ids = new ArrayList<>();
-    private final ArrayList<T> values = new ArrayList<>();
+    protected final List<I> ids;
+    protected final List<T> values;
 
-    private final HashMap<I, Integer> indexById = new HashMap<>();
-    private final HashMap<T, Integer> indexByValue = new HashMap<>();
-    private int size;
-    private final boolean allowDuplicateValues;
+    protected final Map<I, Integer> indexById;
+    protected final Map<T, Integer> indexByValue;
+    protected int size;
+    protected final boolean allowDuplicateValues;
 
     protected RegistryBase(boolean allowDuplicateValues) {
-        this.allowDuplicateValues = allowDuplicateValues;
+        this(allowDuplicateValues, new ArrayList<>(), new ArrayList<>(), new HashMap<>(), new HashMap<>());
     }
 
-    public T register(I id, T value) {
+    protected RegistryBase(boolean allowDuplicateValues, List<I> ids, List<T> values, Map<I, Integer> indexById, Map<T, Integer> indexByValue) {
+        this.allowDuplicateValues = allowDuplicateValues;
+        this.ids = ids;
+        this.values = values;
+        this.indexById = indexById;
+        this.indexByValue = indexByValue;
+    }
+
+    /**
+     * Attempts to register a given value to a given ID
+     * @param id The ID of the value to register
+     * @param value The value to register
+     * @return The registered value
+     * @throws IllegalArgumentException If there is already a ID with the same name, or the value is a duplicate
+     */
+    public T register(I id, T value) throws IllegalArgumentException {
 
         if(ids.contains(id)) {
             throw new IllegalArgumentException("Attempt to register value with duplicate ID!");
@@ -41,11 +59,12 @@ public abstract class RegistryBase<I, T> implements Iterable<T> {
         return value;
     }
 
-    public T get(I id) {
-
-        if(id == null) {
-            throw new IllegalArgumentException("ID must not be null!");
-        }
+    /**
+     * Gets the value associated with the given ID
+     * @param id The ID to lookup
+     * @return A registered value, or null if not found
+     */
+    public T get(@NotNull I id) {
 
         Integer index = indexById.get(id);
 
@@ -56,11 +75,12 @@ public abstract class RegistryBase<I, T> implements Iterable<T> {
         return values.get(index);
     }
 
-    public I getId(T value) {
-
-        if(value == null) {
-            throw new IllegalArgumentException("Value must not be null!");
-        }
+    /**
+     * Gets the ID of the given registered value
+     * @param value The value to lookup
+     * @return The value's ID, or null if the value is unregistered
+     */
+    public I getId(@NotNull T value) {
 
         Integer index = indexOf(value);
 
@@ -71,6 +91,11 @@ public abstract class RegistryBase<I, T> implements Iterable<T> {
         return ids.get(index);
     }
 
+    /**
+     * Gets the index into the registry of the given registered value
+     * @param value The value to lookup
+     * @return The index of the value, or null if the value is unregistered
+     */
     public Integer indexOf(T value) {
 
         Integer index = indexByValue.get(value);
@@ -79,20 +104,37 @@ public abstract class RegistryBase<I, T> implements Iterable<T> {
         return index;
     }
 
+    /**
+     * Determines if there is a registered value with the given ID
+     * @param id The id to lookup
+     * @return Whether there is a value registered to that ID
+     */
     public boolean hasKey(I id) {
 
         return indexById.containsKey(id);
     }
 
-    public T valueAtIndex(int index) {
+    /**
+     * Gets the value at a particular index
+     * @param index The index into the registry
+     * @return The value at the given index
+     * @throws IndexOutOfBoundsException If the index is less than zero or greater than the largest index in the registry
+     */
+    public T valueAtIndex(int index) throws IndexOutOfBoundsException {
 
-        if(index < 0 || index > size) {
+        if(index < 0 || index >= size) {
             throw new IndexOutOfBoundsException("Index " + index + " out of bounds for registry of size " + size + "!");
         }
 
         return values.get(index);
     }
 
+    /**
+     * Gets the ID of the registered value at the given index
+     * @param index The index into the registry
+     * @return The ID of the value at the index
+     * @throws IndexOutOfBoundsException If the index is less than zero or greater than the largest index in the registry
+     */
     public I idAtIndex(int index) {
 
         if(index < 0 || index > size) {
@@ -102,6 +144,9 @@ public abstract class RegistryBase<I, T> implements Iterable<T> {
         return ids.get(index);
     }
 
+    /**
+     * Clears all values from the registry
+     */
     public void clear() {
 
         values.clear();
@@ -113,6 +158,14 @@ public abstract class RegistryBase<I, T> implements Iterable<T> {
         size = 0;
     }
 
+    /**
+     * Removes the registered value with the given ID from the registry.
+     * <br/>
+     * <br/>
+     * WARNING: This is not recommended for most use cases, as it will cause the registry index to be rebuilt.
+     * @param id The ID to lookup
+     * @return The value which used to be associated with the given ID
+     */
     public T remove(I id) {
 
         Integer index = indexById.get(id);
@@ -124,6 +177,14 @@ public abstract class RegistryBase<I, T> implements Iterable<T> {
         return removeAtIndex(index);
     }
 
+    /**
+     * Removes the given registered value from the registry
+     * <br/>
+     * <br/>
+     * WARNING: This is not recommended for most use cases, as it will cause the registry index to be rebuilt.
+     * @param value The value to lookup
+     * @return The value which used to be in the registry
+     */
     public T removeValue(T value) {
 
         Integer index = indexByValue.get(value);
@@ -135,7 +196,15 @@ public abstract class RegistryBase<I, T> implements Iterable<T> {
         return removeAtIndex(index);
     }
 
-    public T removeAtIndex(int index) {
+    /**
+     * Removes the registered value at the given index from the registry
+     * <br/>
+     * <br/>
+     * WARNING: This is not recommended for most use cases, as it will cause the registry index to be rebuilt.
+     * @param index The index into the registry
+     * @return The value which used to be at the given index
+     */
+    public T removeAtIndex(int index) throws IndexOutOfBoundsException {
 
         if(index < 0 || index > size) {
             throw new IndexOutOfBoundsException("Index " + index + " out of bounds for registry of size " + size + "!");
@@ -156,23 +225,53 @@ public abstract class RegistryBase<I, T> implements Iterable<T> {
         return out;
     }
 
+    /**
+     * Gets the number of registered values in the registry
+     * @return The size of the registry
+     */
     public int getSize() {
         return size;
     }
 
+    /**
+     * Determines if the given value is registered
+     * @param value The value to lookup
+     * @return Whether the value is registered
+     */
     public boolean isRegistered(T value) {
         return indexByValue.containsKey(value);
     }
 
+    /**
+     * Determines if the given ID is in the registry
+     * @param id The ID to lookup
+     * @return Whether the ID is in the registry
+     */
     public boolean contains(I id) {
         return indexById.containsKey(id);
     }
 
+    /**
+     * Gets a list of IDs of registered values
+     * @return A list of registered value IDs
+     */
     public Collection<I> getIds() {
         return indexById.keySet();
     }
 
+    /**
+     * Creates a Serializer for getting registered values from Strings
+     * @return A new Serializer
+     */
     public abstract InlineSerializer<T> nameSerializer();
+
+    /**
+     * Creates an immutable registry which contains all keys and values of this registry, but cannot be modified
+     * @return A frozen registry
+     */
+    public FrozenRegistry<I, T> freeze() {
+        return new FrozenRegistry<>(this, nameSerializer());
+    }
 
     @Override
     public Iterator<T> iterator() {
