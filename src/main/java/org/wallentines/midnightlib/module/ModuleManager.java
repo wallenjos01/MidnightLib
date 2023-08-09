@@ -11,6 +11,11 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
+/**
+ * Loads, initializes, and manages modules
+ * @param <T> The type of data modules expect
+ * @param <M> The type of modules to load
+ */
 @SuppressWarnings("unused")
 public class ModuleManager<T, M extends Module<T>> {
 
@@ -22,31 +27,53 @@ public class ModuleManager<T, M extends Module<T>> {
     private final HashMap<Class<? extends M>, Identifier> idsByClass = new HashMap<>();
     private final HashMap<Identifier, Set<Identifier>> dependents = new HashMap<>();
 
+    /**
+     * Invoked when a module is loaded
+     */
     public final HandlerList<ModuleEvent> onLoad = new HandlerList<>();
+
+    /**
+     * Invoked when a module is unloaded
+     */
     public final HandlerList<ModuleEvent> onUnload = new HandlerList<>();
 
 
+    /**
+     * Constructs a new module manager with the default namespace "midnight"
+     */
     public ModuleManager() {
         this("midnight");
     }
 
+    /**
+     * Constructs a new module manager with the given default namespace
+     * @param defaultNamespace The default namespace for loaded modules
+     */
     public ModuleManager(String defaultNamespace) {
         this.defaultNamespace = defaultNamespace;
         this.loaded = new Registry<>(defaultNamespace);
     }
 
-    public int loadAll(ConfigSection section, T data, Registry<ModuleInfo<T, M>> registry) {
+    /**
+     * Creates and initializes all modules from the given registry, reading the given config and passing in the given
+     * data. All existing modules will be unloaded first.
+     * @param config The module registry config (see {@link ModuleManager#generateConfig(Registry) generateConfig})
+     * @param data The data to pass into module initializers
+     * @param registry The registry when module information is stored.
+     * @return How many modules were loaded
+     */
+    public int loadAll(ConfigSection config, T data, Registry<ModuleInfo<T, M>> registry) {
 
         if(loaded.getSize() > 0) {
             unloadAll();
         }
 
-        section.fill(generateConfig(registry));
+        config.fill(generateConfig(registry));
 
         int count = 0;
-        for(String key : section.getKeys()) {
+        for(String key : config.getKeys()) {
 
-            if(!section.hasSection(key)) continue;
+            if(!config.hasSection(key)) continue;
 
             Identifier id = Identifier.parseOrDefault(key, defaultNamespace);
 
@@ -56,48 +83,21 @@ public class ModuleManager<T, M extends Module<T>> {
                 continue;
             }
 
-            count += loadWithDependencies(info, section, data, registry, new HashSet<>());
+            count += loadWithDependencies(info, config, data, registry, new HashSet<>());
         }
 
         return count;
     }
 
-    private int loadWithDependencies(ModuleInfo<T, M> info, ConfigSection config, T data, Registry<ModuleInfo<T, M>> registry, Collection<ModuleInfo<T, M>> loading) {
-
-        if(loaded.get(info.getId()) != null) return 0;
-
-        if(loading.contains(info)) {
-            LOGGER.warn("Detected cyclical dependency while loading module " + info.getId());
-            return 0;
-        }
-
-        loading.add(info);
-
-        int count = 0;
-        for(Identifier dep : info.getDependencies()) {
-
-            ModuleInfo<T, M> depend = registry.get(dep);
-            if(depend == null) {
-                LOGGER.warn("One or more dependencies could not be found for module " + info.getId() + "! [" + dep + "]");
-                return count;
-            }
-
-            dependents.computeIfAbsent(depend.getId(), k -> new HashSet<>()).add(info.getId());
-
-            count += loadWithDependencies(depend, config, data, registry, loading);
-        }
-
-        if(loadModule(info, data, config.getSection(info.getId().toString()))) {
-            count++;
-        }
-
-        loading.remove(info);
-
-        return count;
-    }
-
+    /**
+     * creates a module from the given module info and initializes it with the given data and configuration
+     * @param info The module info by which to create the module
+     * @param data The data to pass into the initializer
+     * @param config The module configuration
+     * @return Whether loading was successful
+     */
     @SuppressWarnings("unchecked")
-    public boolean loadModule(ModuleInfo<T, M> info, T data, ConfigSection section) {
+    public boolean loadModule(ModuleInfo<T, M> info, T data, ConfigSection config) {
 
         M module = info.create();
         Identifier id = info.getId();
@@ -114,9 +114,9 @@ public class ModuleManager<T, M extends Module<T>> {
         ConfigSection defaults = info.getDefaultConfig();
         if(defaults == null) defaults = new ConfigSection();
 
-        section.fill(defaults);
+        config.fill(defaults);
 
-        if(!section.getBoolean("enabled")) return false;
+        if(!config.getBoolean("enabled")) return false;
 
         for(Identifier dep : info.getDependencies()) {
             if(!loaded.hasKey(dep)) {
@@ -126,7 +126,7 @@ public class ModuleManager<T, M extends Module<T>> {
         }
 
         try {
-            if(!module.initialize(section, data)) {
+            if(!module.initialize(config, data)) {
                 LOGGER.warn("Unable to initialize module " + id + "!");
 
                 Event.unregisterAll(module);
@@ -148,26 +148,230 @@ public class ModuleManager<T, M extends Module<T>> {
         return true;
     }
 
+    /**
+     * Gets a module which is or inherits from the given class
+     * @param clazz The class to look up
+     * @return A module of that class, or null if none is found
+     * @param <O> The type of module to lookup
+     */
     public <O extends M> O getModule(Class<O> clazz) {
 
-        Identifier id = getIdByClass(clazz);
+        Identifier id = getModuleId(clazz);
         return id == null ? null : clazz.cast(loaded.get(id));
     }
 
+    /**
+     * Gets a module with the given ID
+     * @param id The ID to lookup
+     * @return A module with that ID, or null if none is found
+     */
     public M getModuleById(Identifier id) {
 
         return loaded.get(id);
     }
 
+    /**
+     * Determines if a module with the given ID is loaded
+     * @param id The ID to lookup
+     * @return Whether that module is loaded
+     */
     public boolean isModuleLoaded(Identifier id) {
 
         return loaded.hasKey(id);
     }
 
+    /**
+     * Gets a collection of IDs for all loaded modules
+     * @return A collection of loaded module IDs
+     */
     public Collection<Identifier> getLoadedModuleIds() {
 
         return loaded.getIds();
     }
+
+    /**
+     * Unloads a module with the given ID
+     * @param moduleId The ID of the module to unload
+     */
+    public void unloadModule(Identifier moduleId) {
+
+        M mod = loaded.get(moduleId);
+        if(mod == null) return;
+
+        unloadWithDependents(mod, moduleId);
+
+        loaded.remove(moduleId);
+    }
+
+    /**
+     * Unloads all modules
+     */
+    public void unloadAll() {
+
+        List<Identifier> ids = new ArrayList<>(loaded.getIds());
+        for(Identifier id : ids) {
+
+            if(!loaded.hasKey(id)) continue;
+            unloadWithDependents(loaded.get(id), id);
+        }
+
+        loaded.clear();
+    }
+
+    /**
+     * Reloads a module with the given ID
+     * @param moduleId The module ID to look up
+     * @param config The module config
+     * @param data The data to pass into the initializer
+     * @param info The module info of new module
+     */
+    public void reloadModule(Identifier moduleId, ConfigSection config, T data, ModuleInfo<T, M> info) {
+
+        unloadModule(moduleId);
+        loadModule(info, data, config);
+    }
+
+    /**
+     * Reloads all modules
+     * @param config The module registry config (see {@link ModuleManager#generateConfig(Registry) generateConfig})
+     * @param data The data to pass into the module initializer
+     * @param reg The registry containing all modules to load
+     */
+    public void reloadAll(ConfigSection config, T data, Registry<ModuleInfo<T, M>> reg) {
+
+        unloadAll();
+        loadAll(config, data, reg);
+    }
+
+    /**
+     * Gets the ID of a loaded module with the given class
+     * @param clazz The class to lookup
+     * @return The ID of the loaded module of that class, or null of none is found
+     * @param <O> The type of module
+     */
+    public <O extends M> Identifier getModuleId(Class<O> clazz) {
+
+        return idsByClass.computeIfAbsent(clazz, k -> {
+            for(M mod : loaded) {
+                if(clazz == mod.getClass() || clazz.isAssignableFrom(mod.getClass())) {
+                    return loaded.getId(mod);
+                }
+            }
+            return null;
+        });
+    }
+
+    /**
+     * Gets the ID of a loaded module
+     * @param mod The module itself
+     * @return The module's ID
+     */
+    public Identifier getModuleId(M mod) {
+
+        return loaded.getId(mod);
+    }
+
+    /**
+     * Gets the number of loaded modules
+     * @return The number of loaded modules
+     */
+    public int getCount() {
+
+        return loaded.getSize();
+    }
+
+
+    /**
+     * Generates a module registry config by reading the default configurations of all the module info in the given registry.
+     * @param reg The registry to read
+     * @return The default module registry config for the given registry
+     * @param <T> The type of data modules expect during initialization
+     * @param <M> The type of modules to load
+     */
+    public static <T, M extends Module<T>> ConfigSection generateConfig(Registry<ModuleInfo<T, M>> reg) {
+
+        ConfigSection out = new ConfigSection();
+        for(ModuleInfo<T, M> info : reg) {
+
+            ConfigSection conf = info.getDefaultConfig();
+            if(!conf.has("enabled")) conf.set("enabled", true);
+            out.set(info.getId().toString(), conf);
+        }
+
+        return out;
+    }
+
+    /**
+     * An event fired when a module is loaded or unloaded
+     */
+    public class ModuleEvent {
+        private final M module;
+        private final Identifier id;
+
+        /**
+         * Constructs a new module event with the given module and ID
+         * @param module The module
+         * @param id The ID of the module
+         */
+        public ModuleEvent(M module, Identifier id) {
+            this.module = module;
+            this.id = id;
+        }
+
+        /**
+         * Gets the module itself
+         * @return The module
+         */
+        public M getModule() {
+            return module;
+        }
+
+        /**
+         * Gets the module's ID
+         * @return The module's ID
+         */
+        public Identifier getId() {
+            return id;
+        }
+    }
+
+
+    private int loadWithDependencies(ModuleInfo<T, M> info, ConfigSection config, T data, Registry<ModuleInfo<T, M>> registry, Collection<ModuleInfo<T, M>> loading) {
+
+        if(loaded.get(info.getId()) != null) return 0;
+
+        // Avoid infinite recursion if a module depends on itself by keeping track of which modules are currently in the
+        // process of loading
+        if(!loading.add(info)) {
+            LOGGER.warn("Detected cyclical dependency while loading module " + info.getId());
+            return 0;
+        }
+
+        int count = 0;
+        for(Identifier dep : info.getDependencies()) {
+
+            ModuleInfo<T, M> depend = registry.get(dep);
+            if(depend == null) {
+                LOGGER.warn("One or more dependencies could not be found for module " + info.getId() + "! [" + dep + "]");
+                return count;
+            }
+
+            dependents.computeIfAbsent(depend.getId(), k -> new HashSet<>()).add(info.getId());
+
+            // Load dependencies first through recursion
+            count += loadWithDependencies(depend, config, data, registry, loading);
+        }
+
+        if(loadModule(info, data, config.getSection(info.getId().toString()))) {
+            count++;
+        }
+
+        // After a module is loaded, remove it from the running list of loading modules
+        loading.remove(info);
+
+        return count;
+    }
+
 
     private void unloadWithDependents(M mod, Identifier moduleId) {
 
@@ -189,98 +393,6 @@ public class ModuleManager<T, M extends Module<T>> {
         }
 
         dependents.remove(moduleId);
-    }
-
-    public void unloadModule(Identifier moduleId) {
-
-        M mod = loaded.get(moduleId);
-        if(mod == null) return;
-
-        unloadWithDependents(mod, moduleId);
-
-        loaded.remove(moduleId);
-    }
-
-    public void unloadAll() {
-
-        List<Identifier> ids = new ArrayList<>(loaded.getIds());
-        for(Identifier id : ids) {
-
-            if(!loaded.hasKey(id)) continue;
-            unloadWithDependents(loaded.get(id), id);
-        }
-
-        loaded.clear();
-    }
-
-    public void reloadModule(Identifier moduleId, ConfigSection config, T data, ModuleInfo<T, M> info) {
-
-        unloadModule(moduleId);
-        loadModule(info, data, config);
-    }
-
-    public void reloadAll(ConfigSection config, T data, Registry<ModuleInfo<T, M>> reg) {
-
-        unloadAll();
-        loadAll(config, data, reg);
-    }
-
-    public <O extends M> Identifier getModuleId(Class<O> clazz) {
-
-        return getIdByClass(clazz);
-    }
-
-    public Identifier getModuleId(M mod) {
-
-        return loaded.getId(mod);
-    }
-
-    private <O extends M> Identifier getIdByClass(Class<O> clazz) {
-
-        return idsByClass.computeIfAbsent(clazz, k -> {
-            for(M mod : loaded) {
-                if(clazz == mod.getClass() || clazz.isAssignableFrom(mod.getClass())) {
-                    return loaded.getId(mod);
-                }
-            }
-            return null;
-        });
-    }
-
-    public int getCount() {
-
-        return loaded.getSize();
-    }
-
-    public static <T, M extends Module<T>> ConfigSection generateConfig(Registry<ModuleInfo<T, M>> reg) {
-
-        ConfigSection out = new ConfigSection();
-        for(ModuleInfo<T, M> info : reg) {
-
-            ConfigSection conf = info.getDefaultConfig();
-            if(!conf.has("enabled")) conf.set("enabled", true);
-            out.set(info.getId().toString(), conf);
-        }
-
-        return out;
-    }
-
-    public class ModuleEvent {
-        private final M module;
-        private final Identifier id;
-
-        public ModuleEvent(M module, Identifier id) {
-            this.module = module;
-            this.id = id;
-        }
-
-        public M getModule() {
-            return module;
-        }
-
-        public Identifier getId() {
-            return id;
-        }
     }
 
 }

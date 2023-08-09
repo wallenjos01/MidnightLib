@@ -7,6 +7,7 @@ import org.wallentines.mdcfg.serializer.Serializer;
 /**
  * A three-dimensional vector of integers
  */
+@SuppressWarnings("unused")
 public class Vec3i {
     private final int x;
     private final int y;

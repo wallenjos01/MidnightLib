@@ -8,6 +8,7 @@ import java.util.Objects;
 /**
  * A two-dimensional vector of doubles
  */
+@SuppressWarnings("unused")
 public class Vec2d {
 
     private final double x;
