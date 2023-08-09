@@ -109,9 +109,9 @@ public class Identifier {
         }
     }
 
-    private static boolean isValid(String[] strs) {
+    private static boolean isValid(String[] values) {
 
-        return strs.length > 1 && strs[0] != null && !strs[0].isEmpty() && strs[1] != null && !strs[1].isEmpty();
+        return values.length > 1 && values[0] != null && !values[0].isEmpty() && values[1] != null && !values[1].isEmpty();
     }
 
     @Override

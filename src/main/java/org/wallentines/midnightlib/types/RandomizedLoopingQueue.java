@@ -17,10 +17,7 @@ public class RandomizedLoopingQueue<T> extends RandomizedQueue<T> {
      * @throws IllegalArgumentException iff the collection is empty
      */
     public RandomizedLoopingQueue(Collection<T> options) {
-
-        if(options.isEmpty()) throw new IllegalArgumentException("Cannot create randomized looping queue with zero options!");
-        this.options = options;
-
+        this(options, RANDOM);
     }
 
     /**
@@ -36,6 +33,7 @@ public class RandomizedLoopingQueue<T> extends RandomizedQueue<T> {
         if(options.isEmpty()) throw new IllegalArgumentException("Cannot create randomized looping queue with zero options!");
         this.options = options;
 
+        refill();
     }
 
     @Override
@@ -50,9 +48,13 @@ public class RandomizedLoopingQueue<T> extends RandomizedQueue<T> {
         return super.poll();
     }
 
+    @Override
+    public boolean isEmpty() {
+        return false;
+    }
+
     private void refill() {
 
         this.addAll(options);
     }
-
 }

@@ -45,6 +45,15 @@ public class TestModules {
         }
     }
 
+    private static class TestModule3 implements Module<String> {
+
+        @Override
+        public boolean initialize(ConfigSection config, String data) {
+            Assertions.assertEquals("Fail", data);
+            return false;
+        }
+    }
+
     @Test
     public void testModules() {
 
@@ -175,4 +184,24 @@ public class TestModules {
 
     }
 
+
+    @Test
+    public void testFail() {
+
+        Identifier id = new Identifier("midnight", "test3");
+
+
+        ModuleInfo<String, Module<String>> info = new ModuleInfo<>(TestModule3::new, id, new ConfigSection().with("default", true));
+
+        Registry<ModuleInfo<String, Module<String>>> reg = new Registry<>("midnight");
+        reg.register(id, info);
+
+        ModuleManager<String, Module<String>> manager = new ModuleManager<>();
+
+        ConfigSection defaults = ModuleManager.generateConfig(reg);
+
+        int loaded = manager.loadAll(defaults, "Fail", reg);
+        Assertions.assertEquals(0, loaded);
+
+    }
 }

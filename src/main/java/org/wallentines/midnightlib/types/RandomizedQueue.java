@@ -11,7 +11,7 @@ import java.util.Random;
  */
 public class RandomizedQueue<T> extends AbstractQueue<T> {
 
-    private static final Random RANDOM = new Random();
+    protected static final Random RANDOM = new Random();
     private final Random rand;
     private final LinkedList<T> internal = new LinkedList<>();
 
