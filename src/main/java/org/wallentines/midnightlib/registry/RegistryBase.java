@@ -1,6 +1,7 @@
 package org.wallentines.midnightlib.registry;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.wallentines.mdcfg.serializer.InlineSerializer;
 
 import java.util.*;
@@ -64,6 +65,7 @@ public abstract class RegistryBase<I, T> implements Iterable<T> {
      * @param id The ID to lookup
      * @return A registered value, or null if not found
      */
+    @Nullable
     public T get(@NotNull I id) {
 
         Integer index = indexById.get(id);
@@ -80,6 +82,7 @@ public abstract class RegistryBase<I, T> implements Iterable<T> {
      * @param value The value to lookup
      * @return The value's ID, or null if the value is unregistered
      */
+    @Nullable
     public I getId(@NotNull T value) {
 
         Integer index = indexOf(value);
@@ -96,6 +99,7 @@ public abstract class RegistryBase<I, T> implements Iterable<T> {
      * @param value The value to lookup
      * @return The index of the value, or null if the value is unregistered
      */
+    @Nullable
     public Integer indexOf(T value) {
 
         Integer index = indexByValue.get(value);
@@ -135,7 +139,7 @@ public abstract class RegistryBase<I, T> implements Iterable<T> {
      * @return The ID of the value at the index
      * @throws IndexOutOfBoundsException If the index is less than zero or greater than the largest index in the registry
      */
-    public I idAtIndex(int index) {
+    public I idAtIndex(int index) throws IndexOutOfBoundsException {
 
         if(index < 0 || index > size) {
             throw new IndexOutOfBoundsException("Index " + index + " out of bounds for registry of size " + size + "!");
@@ -165,13 +169,14 @@ public abstract class RegistryBase<I, T> implements Iterable<T> {
      * WARNING: This is not recommended for most use cases, as it will cause the registry index to be rebuilt.
      * @param id The ID to lookup
      * @return The value which used to be associated with the given ID
+     * @throws IllegalArgumentException If there is no object with the given ID
      */
     public T remove(I id) {
 
         Integer index = indexById.get(id);
 
         if(index == null || index < 0) {
-            throw new IllegalStateException("Attempt to remove item with unregistered ID!");
+            throw new IllegalArgumentException("Attempt to remove item with unregistered ID!");
         }
 
         return removeAtIndex(index);
@@ -184,13 +189,14 @@ public abstract class RegistryBase<I, T> implements Iterable<T> {
      * WARNING: This is not recommended for most use cases, as it will cause the registry index to be rebuilt.
      * @param value The value to lookup
      * @return The value which used to be in the registry
+     * @throws IllegalArgumentException If the given value is not registered
      */
     public T removeValue(T value) {
 
         Integer index = indexByValue.get(value);
 
         if(index == null || index < 0) {
-            throw new IllegalStateException("Attempt to remove unregistered item!");
+            throw new IllegalArgumentException("Attempt to remove unregistered item!");
         }
 
         return removeAtIndex(index);

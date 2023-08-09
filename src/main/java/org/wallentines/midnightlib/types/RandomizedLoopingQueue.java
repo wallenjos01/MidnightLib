@@ -14,6 +14,7 @@ public class RandomizedLoopingQueue<T> extends RandomizedQueue<T> {
     /**
      * Constructs a new randomized looping queue with the given options and the built-in Random object
      * @param options The options which will be in the queue at first, and will be used to refill the queue if ever empties
+     * @throws IllegalArgumentException iff the collection is empty
      */
     public RandomizedLoopingQueue(Collection<T> options) {
 
@@ -26,6 +27,7 @@ public class RandomizedLoopingQueue<T> extends RandomizedQueue<T> {
      * Constructs a new randomized looping queue with the given options and the given Random object
      * @param options The options which will be in the queue at first, and will be used to refill the queue if ever empties
      * @param rand The Random object to use for randomization
+     * @throws IllegalArgumentException iff the collection is empty
      */
     public RandomizedLoopingQueue(Collection<T> options, Random rand) {
 

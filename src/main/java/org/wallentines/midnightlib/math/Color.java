@@ -4,6 +4,7 @@ import org.wallentines.mdcfg.serializer.InlineSerializer;
 import org.wallentines.mdcfg.serializer.ObjectSerializer;
 import org.wallentines.mdcfg.serializer.Serializer;
 
+import java.text.ParseException;
 import java.util.Objects;
 
 /**
@@ -41,35 +42,6 @@ public class Color {
         red = rgb >> 16;
         green = (rgb >> 8) - (red << 8);
         blue = rgb - (red << 16) - (green << 8);
-    }
-
-    /**
-     * Parses an RGB color from the given hex-code
-     * @param name The hex code to parse (i.e. "#RRGGBB")
-     */
-    public Color(String name) {
-        int b;
-        int g;
-        int r;
-        try {
-            if (name.startsWith("#")) {
-                name = name.substring(1);
-            }
-            if (name.length() != 6) {
-                throw new IllegalStateException("'" + name + "' cannot be converted to a color!");
-            }
-            r = Integer.parseInt(name.substring(0, 2), 16);
-            g = Integer.parseInt(name.substring(2, 4), 16);
-            b = Integer.parseInt(name.substring(4, 6), 16);
-        }
-        catch (NumberFormatException ex) {
-            r = 255;
-            g = 255;
-            b = 255;
-        }
-        this.red = r;
-        this.green = g;
-        this.blue = b;
     }
 
     /**
@@ -239,16 +211,48 @@ public class Color {
      * Parses a hex color code as a Color
      * @param hex The hex code to parse
      * @return A parsed color
+     * @throws ParseException if there are too little or too many characters, or invalid Hex characters
      */
-    public static Color parse(String hex) {
+    public static Color parse(String hex) throws ParseException {
 
-        return new Color(hex);
+        int r = -1;
+        int g = -1;
+        int b;
+        try {
+            if (hex.startsWith("#")) {
+                hex = hex.substring(1);
+            }
+            if (hex.length() != 6) {
+                throw new ParseException("'" + hex + "' cannot be converted to a color! Wrong length!", 7);
+            }
+            r = Integer.parseInt(hex.substring(0, 2), 16);
+            g = Integer.parseInt(hex.substring(2, 4), 16);
+            b = Integer.parseInt(hex.substring(4, 6), 16);
+        }
+        catch (NumberFormatException ex) {
+
+            int offset = 1;
+            if(r > -1) offset += 2;
+            if(g > -1) offset += 2;
+
+            String invalid = hex.substring(offset, offset + 2);
+
+            throw new ParseException("'" + hex + "' cannot be converted to a color! Invalid hex string " + invalid + "!", offset);
+        }
+
+        return new Color(r,g,b);
     }
 
     public static final Color WHITE = new Color(16777215);
 
     public static final Serializer<Color> SERIALIZER =
-            InlineSerializer.of(Color::toHex, Color::new).or(
+            InlineSerializer.of(Color::toHex, str -> {
+                try {
+                    return Color.parse(str);
+                } catch (ParseException ex) {
+                    return null;
+                }
+            }).or(
             ObjectSerializer.create(
                     Serializer.INT.entry("red", Color::getRed),
                     Serializer.INT.entry("green", Color::getGreen),

@@ -139,9 +139,10 @@ public class MultiRequirement<T> extends Requirement<T> {
          * @param minimum The minimum number of requirements which need to be completed
          * @param maximum The maximum number of requirements which can to be completed
          * @return A new Operation
+         * @throws IllegalArgumentException If the minimum value is greater than the maximum
          */
         public static Operation between(int minimum, int maximum) {
-            if(minimum > maximum) throw new IllegalStateException("Minimum bound cannot be greater than maximum bound!");
+            if(minimum > maximum) throw new IllegalArgumentException("Minimum bound cannot be greater than maximum bound!");
             return new Operation(minimum, maximum);
         }
 

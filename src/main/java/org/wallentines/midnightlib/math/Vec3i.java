@@ -1,5 +1,6 @@
 package org.wallentines.midnightlib.math;
 
+import org.jetbrains.annotations.Nullable;
 import org.wallentines.mdcfg.serializer.InlineSerializer;
 import org.wallentines.mdcfg.serializer.ObjectSerializer;
 import org.wallentines.mdcfg.serializer.Serializer;
@@ -161,6 +162,7 @@ public class Vec3i {
      * @param str The string to parse
      * @return A parsed vector, or null if the String is not formatted correctly
      */
+    @Nullable
     public static Vec3i parse(String str) {
 
         if(str == null || !str.contains(",")) return null;
