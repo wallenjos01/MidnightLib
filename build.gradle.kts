@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "org.wallentines"
-version = "1.3.0-SNAPSHOT"
+version = "1.3.0"
 
 java.sourceCompatibility = JavaVersion.VERSION_11
 java.targetCompatibility = JavaVersion.VERSION_11
