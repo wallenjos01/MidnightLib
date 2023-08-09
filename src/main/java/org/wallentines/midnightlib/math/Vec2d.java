@@ -33,14 +33,6 @@ public class Vec2d {
         return distX * distX + distY * distY;
     }
 
-    public boolean equals(Object obj) {
-        if (!(obj instanceof Vec2d)) {
-            return false;
-        }
-        Vec2d other = (Vec2d)obj;
-        return other.getX() == this.getX() && other.getY() == this.getY();
-    }
-
     private static int truncate(double d) {
         return d < 0 ? ((int) d - 1) : (int) d;
     }
@@ -55,20 +47,14 @@ public class Vec2d {
         return getX() + "," + getY();
     }
 
-    public static Vec2d parse(String str) {
 
-        if(str == null || !str.contains(",")) return null;
-        String[] xyz = str.split(",");
-
-        try {
-            double x = Double.parseDouble(xyz[0]);
-            double y = Double.parseDouble(xyz[1]);
-
-            return new Vec2d(x,y);
-        } catch (NumberFormatException ex) {
-            return null;
+    @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof Vec2d)) {
+            return false;
         }
-
+        Vec2d other = (Vec2d)obj;
+        return other.getX() == this.getX() && other.getY() == this.getY();
     }
 
     @Override
@@ -98,6 +84,23 @@ public class Vec2d {
 
     public Vec2d multiply(Vec2d other) {
         return new Vec2d(x * other.x, y * other.y);
+    }
+
+
+    public static Vec2d parse(String str) {
+
+        if(str == null || !str.contains(",")) return null;
+        String[] xyz = str.split(",");
+
+        try {
+            double x = Double.parseDouble(xyz[0]);
+            double y = Double.parseDouble(xyz[1]);
+
+            return new Vec2d(x,y);
+        } catch (NumberFormatException ex) {
+            return null;
+        }
+
     }
 
     public static final Serializer<Vec2d> SERIALIZER = org.wallentines.mdcfg.serializer.InlineSerializer.of(Object::toString, Vec2d::parse).or(

@@ -49,11 +49,6 @@ public class Vec2i {
 
     }
 
-    @Override
-    public String toString() {
-        return getX() + "," + getY();
-    }
-
     public Vec2i add(int i) {
         return new Vec2i(x + i, y + i);
     }
@@ -78,6 +73,10 @@ public class Vec2i {
         return new Vec2i(x * other.x, y * other.y);
     }
 
+    @Override
+    public String toString() {
+        return getX() + "," + getY();
+    }
 
     @Override
     public int hashCode() {

@@ -4,6 +4,8 @@ import org.wallentines.mdcfg.serializer.InlineSerializer;
 import org.wallentines.mdcfg.serializer.ObjectSerializer;
 import org.wallentines.mdcfg.serializer.Serializer;
 
+import java.util.Objects;
+
 public class Vec3d {
     private final double x;
     private final double y;
@@ -38,14 +40,6 @@ public class Vec3d {
         return ax * ax + ay * ay + az * az;
     }
 
-    public boolean equals(Object obj) {
-        if (!(obj instanceof Vec3d)) {
-            return false;
-        }
-        Vec3d other = (Vec3d)obj;
-        return other.getX() == this.getX() && other.getY() == this.getY() && other.getZ() == this.getZ();
-    }
-
     private static int truncate(double d) {
         return d < 0 ? ((int) d - 1) : (int) d;
     }
@@ -60,21 +54,18 @@ public class Vec3d {
         return getX() + "," + getY() + "," + getZ();
     }
 
-    public static Vec3d parse(String str) {
-
-        if(str == null || !str.contains(",")) return null;
-        String[] xyz = str.split(",");
-
-        try {
-            double x = Double.parseDouble(xyz[0]);
-            double y = Double.parseDouble(xyz[1]);
-            double z = Double.parseDouble(xyz[2]);
-
-            return new Vec3d(x,y,z);
-        } catch (NumberFormatException ex) {
-            return null;
+    @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof Vec3d)) {
+            return false;
         }
+        Vec3d other = (Vec3d)obj;
+        return other.getX() == this.getX() && other.getY() == this.getY() && other.getZ() == this.getZ();
+    }
 
+    @Override
+    public int hashCode() {
+        return Objects.hash(x, y, z);
     }
 
     public Vec3d add(double i) {
@@ -99,6 +90,23 @@ public class Vec3d {
         return new Vec3d(x * i.x, y * i.y, z * i.z);
     }
 
+
+    public static Vec3d parse(String str) {
+
+        if(str == null || !str.contains(",")) return null;
+        String[] xyz = str.split(",");
+
+        try {
+            double x = Double.parseDouble(xyz[0]);
+            double y = Double.parseDouble(xyz[1]);
+            double z = Double.parseDouble(xyz[2]);
+
+            return new Vec3d(x,y,z);
+        } catch (NumberFormatException ex) {
+            return null;
+        }
+
+    }
 
     public static final Serializer<Vec3d> SERIALIZER = InlineSerializer.of(Object::toString, Vec3d::parse).or(
         ObjectSerializer.create(

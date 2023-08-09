@@ -6,6 +6,8 @@ import org.wallentines.mdcfg.serializer.SerializeResult;
 import org.wallentines.mdcfg.serializer.Serializer;
 import org.wallentines.midnightlib.registry.RegistryBase;
 
+import java.util.Objects;
+
 public class Requirement<T> {
 
     private final RequirementType<T> type;
@@ -62,4 +64,16 @@ public class Requirement<T> {
         };
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Requirement<?> that = (Requirement<?>) o;
+        return Objects.equals(type, that.type) && Objects.equals(value, that.value);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(type, value);
+    }
 }

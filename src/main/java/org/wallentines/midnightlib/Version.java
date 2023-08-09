@@ -3,6 +3,8 @@ package org.wallentines.midnightlib;
 import org.wallentines.mdcfg.serializer.InlineSerializer;
 import org.wallentines.mdcfg.serializer.Serializer;
 
+import java.util.Arrays;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -79,6 +81,21 @@ public class Version {
         return out.toString();
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Version version = (Version) o;
+        return major == version.major && minor == version.minor && patch == version.patch && Arrays.equals(preRelease, version.preRelease) && Arrays.equals(buildMetadata, version.buildMetadata);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = Objects.hash(major, minor, patch);
+        result = 31 * result + Arrays.hashCode(preRelease);
+        result = 31 * result + Arrays.hashCode(buildMetadata);
+        return result;
+    }
 
     private static final Pattern NO_PNTS = Pattern.compile("^(0|[1-9]\\d*)");
     private static final Pattern ONE_PNT = Pattern.compile("^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)");

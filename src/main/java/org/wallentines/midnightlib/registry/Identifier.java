@@ -72,7 +72,7 @@ public class Identifier {
 
     private static boolean isValid(String[] strs) {
 
-        return strs.length > 1 && strs[0] != null && strs[0].length() > 0 && strs[1] != null && strs[1].length() > 0;
+        return strs.length > 1 && strs[0] != null && !strs[0].isEmpty() && strs[1] != null && !strs[1].isEmpty();
     }
 
     @Override

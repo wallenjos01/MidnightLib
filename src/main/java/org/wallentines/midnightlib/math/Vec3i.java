@@ -55,11 +55,6 @@ public class Vec3i {
 
     }
 
-    @Override
-    public String toString() {
-        return getX() + "," + getY() + "," + getZ();
-    }
-
     public Vec3i add(int i) {
         return new Vec3i(x + i, y + i, z + i);
     }
@@ -82,6 +77,11 @@ public class Vec3i {
 
     public Vec3i multiply(Vec3i other) {
         return new Vec3i(x * other.x, y * other.y, z * other.z);
+    }
+
+    @Override
+    public String toString() {
+        return getX() + "," + getY() + "," + getZ();
     }
 
     @Override

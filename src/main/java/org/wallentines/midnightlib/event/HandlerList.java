@@ -50,8 +50,7 @@ public class HandlerList<T> {
             handler.invoke(event);
         } catch (Throwable th) {
 
-            LOGGER.warn("An exception was thrown while an event was being handled!");
-            th.printStackTrace();
+            LOGGER.warn("An exception was thrown while an event was being handled!", th);
         }
     }
 

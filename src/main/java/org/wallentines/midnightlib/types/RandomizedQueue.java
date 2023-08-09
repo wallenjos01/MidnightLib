@@ -32,7 +32,7 @@ public class RandomizedQueue<T> extends AbstractQueue<T> {
     @Override
     public boolean offer(T t) {
 
-        if(internal.size() == 0) {
+        if(internal.isEmpty()) {
             internal.add(t);
             return true;
         }

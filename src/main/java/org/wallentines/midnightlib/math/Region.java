@@ -49,8 +49,22 @@ public class Region {
         return isWithin(new Vec3d(vector.getX(), vector.getY(), vector.getZ()));
     }
 
+    @Override
     public String toString() {
         return lower.toString() + ";" + upper.toString();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Region region = (Region) o;
+        return Objects.equals(lower, region.lower) && Objects.equals(upper, region.upper);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(lower, upper);
     }
 
     public static Region parse(String s) {

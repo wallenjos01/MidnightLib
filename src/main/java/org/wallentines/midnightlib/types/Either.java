@@ -3,6 +3,7 @@ package org.wallentines.midnightlib.types;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Objects;
 import java.util.function.Function;
 
 /**
@@ -134,4 +135,25 @@ public class Either<L,R> {
         return new Either<>(null, value);
     }
 
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Either<?, ?> either = (Either<?, ?>) o;
+        return Objects.equals(lValue, either.lValue) && Objects.equals(rValue, either.rValue);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(lValue, rValue);
+    }
+
+    @Override
+    public String toString() {
+        if(hasLeft()) {
+            return "Either[left]{" + lValue.toString() + "}";
+        }
+        return "Either[right]{" + rValue.toString() + "}";
+    }
 }

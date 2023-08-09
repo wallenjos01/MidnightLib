@@ -8,6 +8,7 @@ import org.wallentines.midnightlib.registry.RegistryBase;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 
 public class MultiRequirement<T> extends Requirement<T> {
 
@@ -48,4 +49,16 @@ public class MultiRequirement<T> extends Requirement<T> {
 
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        MultiRequirement<?> that = (MultiRequirement<?>) o;
+        return any == that.any && Objects.equals(requirements, that.requirements);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(any, requirements);
+    }
 }

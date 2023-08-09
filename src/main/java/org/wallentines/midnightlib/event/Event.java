@@ -4,7 +4,7 @@ import java.util.HashMap;
 
 public class Event {
 
-    private static final HashMap<Class<?>, HandlerList<?>> events = new HashMap<>();
+    private static final HashMap<Class<?>, HandlerList<?>> EVENTS = new HashMap<>();
 
     public static <T> void register(Class<T> ev, Object listener, EventHandler<T> handler) {
 
@@ -16,7 +16,7 @@ public class Event {
 
         if(listener == null || handler == null) return;
 
-        HandlerList<T> list = (HandlerList<T>) events.computeIfAbsent(ev, k -> new HandlerList<T>());
+        HandlerList<T> list = (HandlerList<T>) EVENTS.computeIfAbsent(ev, k -> new HandlerList<T>());
         list.register(listener, priority, handler);
 
     }
@@ -26,7 +26,7 @@ public class Event {
 
         if(event == null) return;
 
-        HandlerList<T> handlers = (HandlerList<T>) events.get(event.getClass());
+        HandlerList<T> handlers = (HandlerList<T>) EVENTS.get(event.getClass());
         if(handlers == null) return;
 
         handlers.invoke(event);
@@ -35,15 +35,15 @@ public class Event {
 
     public static void unregisterAll(Object o) {
 
-        for(HandlerList<?> l : events.values()) {
+        for(HandlerList<?> l : EVENTS.values()) {
             l.unregisterAll(o);
         }
     }
 
     public static void unregisterAll(Class<?> event) {
 
-        if(events.containsKey(event)) {
-            events.get(event).unregisterAll();
+        if(EVENTS.containsKey(event)) {
+            EVENTS.get(event).unregisterAll();
         }
     }
 
