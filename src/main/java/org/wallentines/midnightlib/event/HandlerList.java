@@ -22,8 +22,8 @@ public class HandlerList<T> {
 
     private final SortedCollection<WrappedHandler> handlers = new SortedCollection<>();
 
-    // To prevent concurrent modification exceptions, calls to register() or unregisterAll() will be deferred if an
-    // event is currently being invoked
+    // To prevent concurrent modification exceptions, calls to register(), invoke(), or unregisterAll() will be deferred
+    // if an event is currently being invoked
     private final Queue<Runnable> waiting = new ConcurrentLinkedDeque<>();
     private final AtomicBoolean invoking = new AtomicBoolean(false);
 
@@ -74,6 +74,7 @@ public class HandlerList<T> {
 
             invoking.set(false);
 
+            // Call all deferred functions
             while(!waiting.isEmpty()) {
                 waiting.remove().run();
             }

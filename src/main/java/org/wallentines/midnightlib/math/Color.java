@@ -6,9 +6,13 @@ import org.wallentines.mdcfg.serializer.Serializer;
 
 import java.util.Objects;
 
+/**
+ * A class which represents an RGB color
+ */
 @SuppressWarnings("unused")
 public class Color {
 
+    // An array of 4-bit (RGBI) colors with RGB values.
     private static final Color[] FOUR_BIT_COLORS = new Color[]{new Color(0, 0, 0), new Color(0, 0, 170), new Color(0, 170, 0), new Color(0, 170, 170), new Color(170, 0, 0), new Color(170, 0, 170), new Color(255, 170, 0), new Color(170, 170, 170), new Color(85, 85, 85), new Color(85, 85, 255), new Color(85, 255, 85), new Color(85, 255, 255), new Color(255, 85, 85), new Color(255, 85, 255), new Color(255, 255, 85), new Color(255, 255, 255)};
 
     private final int red;
@@ -16,12 +20,22 @@ public class Color {
     private final int blue;
     private int closest4bitColor = -1;
 
+    /**
+     * Constructs a new color with the given values
+     * @param red The red channel value
+     * @param green The green channel value
+     * @param blue The blue channel value
+     */
     public Color(int red, int green, int blue) {
         this.red = red;
         this.green = green;
         this.blue = blue;
     }
 
+    /**
+     * Constructs a new color from the packed RGB value
+     * @param rgb A packed RGB value (i.e. 0xRRGGBB)
+     */
     public Color(int rgb) {
 
         red = rgb >> 16;
@@ -29,6 +43,10 @@ public class Color {
         blue = rgb - (red << 16) - (green << 8);
     }
 
+    /**
+     * Parses an RGB color from the given hex-code
+     * @param name The hex code to parse (i.e. "#RRGGBB")
+     */
     public Color(String name) {
         int b;
         int g;
@@ -54,22 +72,42 @@ public class Color {
         this.blue = b;
     }
 
+    /**
+     * Gets the red channel value
+     * @return The red channel value
+     */
     public int getRed() {
         return red;
     }
 
+    /**
+     * Gets the green channel value
+     * @return The green channel value
+     */
     public int getGreen() {
         return green;
     }
 
+    /**
+     * Gets the blue channel value
+     * @return The blue channel value
+     */
     public int getBlue() {
         return blue;
     }
 
+    /**
+     * Returns the hex code representation of the color
+     * @return A hex code (i.e. "#RRGGBB")
+     */
     public String toHex() {
         return "#" + toPlainHex();
     }
 
+    /**
+     * Returns the hex code representation of the color without the leading '#'
+     * @return A plain hex code (i.e. "RRGGBB")
+     */
     public String toPlainHex() {
         String r = Integer.toHexString(this.red);
         String g = Integer.toHexString(this.green);
@@ -86,10 +124,18 @@ public class Color {
         return r + g + b;
     }
 
+    /**
+     * Returns the packed RGB value representation of the color
+     * @return A packed RGB value (i.e. 0xRRGGBB)
+     */
     public int toDecimal() {
         return (red << 16) + (green << 8) + blue;
     }
 
+    /**
+     * Finds the closest 4-bit RGBI color value to this color
+     * @return The closest RGBI value
+     */
     public int toRGBI() {
 
         if (this.closest4bitColor == -1) {
@@ -111,15 +157,6 @@ public class Color {
         return this.closest4bitColor;
     }
 
-    public static Color fromRGBI(int value) {
-        return FOUR_BIT_COLORS[value];
-    }
-
-    public static Color parse(String s) {
-
-        return new Color(s);
-    }
-
     @Override
     public String toString() {
         return toHex();
@@ -139,18 +176,49 @@ public class Color {
         return Objects.hash(red, green, blue);
     }
 
-    public double getDistanceTo(Color c) {
-        return getDistance(this, c);
+    /**
+     * Determines the distance to another color
+     * @param color The color to compare with
+     * @return The distance to the other color
+     */
+    public double getDistanceTo(Color color) {
+        return getDistance(this, color);
     }
 
-    public double getDistanceSquaredTo(Color c) {
-        return getDistanceSquared(this, c);
+    /**
+     * Determines the squared distance to another color
+     * @param color The color to compare with
+     * @return The squared distance to the other color
+     */
+    public double getDistanceSquaredTo(Color color) {
+        return getDistanceSquared(this, color);
     }
 
+    /**
+     * Multiplies the all the channels of the color by a given value
+     * @param multiplier The value to multiply the channels by
+     * @return A new color
+     */
+    public Color multiply(double multiplier) {
+        return new Color((int) (red * multiplier), (int) (green * multiplier), (int) (blue * multiplier));
+    }
+
+    /**
+     * Determines the distance between two colors
+     * @param c1 The first color
+     * @param c2 The second color
+     * @return The distance between the two colors
+     */
     public static double getDistance(Color c1, Color c2) {
         return Math.sqrt(getDistanceSquared(c1, c2));
     }
 
+    /**
+     * Determines the squared distance between two colors
+     * @param c1 The first color
+     * @param c2 The second color
+     * @return The squared distance between the two colors
+     */
     public static double getDistanceSquared(Color c1, Color c2) {
         int r = c2.red - c1.red;
         int g = c2.green - c1.green;
@@ -158,8 +226,23 @@ public class Color {
         return r * r + g * g + b * b;
     }
 
-    public Color multiply(double multiplier) {
-        return new Color((int) (red * multiplier), (int) (green * multiplier), (int) (blue * multiplier));
+    /**
+     * Gets the RGB Color representation of the given RGBI color index
+     * @param value The RGBI color index (0x0 -> 0xF)
+     * @return The RGB Color representation
+     */
+    public static Color fromRGBI(int value) {
+        return FOUR_BIT_COLORS[value];
+    }
+
+    /**
+     * Parses a hex color code as a Color
+     * @param hex The hex code to parse
+     * @return A parsed color
+     */
+    public static Color parse(String hex) {
+
+        return new Color(hex);
     }
 
     public static final Color WHITE = new Color(16777215);
