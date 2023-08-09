@@ -13,7 +13,7 @@ public class StringRegistry<T> extends RegistryBase<String ,T> {
      * Constructs a new String registry which allows duplicate values
      */
     public StringRegistry() {
-        super(true);
+        this(true);
     }
 
     /**

@@ -26,8 +26,9 @@ public class Singleton<T> {
      * @throws IllegalStateException If the singleton is incomplete
      */
     public T get() throws IllegalStateException {
-        if(this.value == null) throw new IllegalStateException("Attempt to access the value of an incomplete singleton!");
-        return this.value;
+        T value = getOrNull();
+        if(value == null) throw new IllegalStateException("Attempt to access the value of an incomplete singleton!");
+        return value;
     }
 
     /**
@@ -45,7 +46,8 @@ public class Singleton<T> {
      * @return The value stored in the Singleton, or the provided default
      */
     public T getOr(T defaultValue) {
-        return this.value == null ? defaultValue : this.value;
+        T value = getOrNull();
+        return value == null ? defaultValue : value;
     }
 
     /**

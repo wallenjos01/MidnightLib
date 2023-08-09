@@ -11,6 +11,7 @@ public class FrozenRegistry<I, T> extends RegistryBase<I, T> {
 
     public FrozenRegistry(RegistryBase<I, T> registry, InlineSerializer<T> nameSerializer) {
         super(registry.allowDuplicateValues, List.copyOf(registry.ids), List.copyOf(registry.values), Map.copyOf(registry.indexById), Map.copyOf(registry.indexByValue));
+        this.size = registry.size;
         this.nameSerializer = nameSerializer;
     }
 

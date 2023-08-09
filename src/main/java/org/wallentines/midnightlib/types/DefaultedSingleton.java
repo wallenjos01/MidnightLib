@@ -25,12 +25,6 @@ public class DefaultedSingleton<T> extends Singleton<T> {
         return defaultValue;
     }
 
-
-    @Override
-    public T get() throws IllegalStateException {
-        return value == null ? defaultValue : value;
-    }
-
     @Override
     public T getOrNull() throws IllegalStateException {
         return value == null ? defaultValue : value;

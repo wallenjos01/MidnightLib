@@ -1,5 +1,6 @@
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.wallentines.midnightlib.registry.FrozenRegistry;
 import org.wallentines.midnightlib.registry.Identifier;
 import org.wallentines.midnightlib.registry.Registry;
 import org.wallentines.midnightlib.registry.StringRegistry;
@@ -85,6 +86,7 @@ public class TestRegistry {
 
         Registry<Integer> registry = new Registry<>("test");
         Assertions.assertEquals(0, registry.getSize());
+        Assertions.assertEquals("test", registry.getDefaultNamespace());
 
         Identifier key1 = new Identifier("test", "key1");
         registry.register(key1, 1);
@@ -95,6 +97,42 @@ public class TestRegistry {
         Assertions.assertEquals(2, registry.getSize());
         Assertions.assertEquals(1, registry.get(key1));
         Assertions.assertEquals(2, registry.get(new Identifier("test2", "key2")));
+    }
+
+    @Test
+    public void testRegistryFreeze() {
+
+        Registry<Integer> registry = new Registry<>("test");
+        Assertions.assertEquals(0, registry.getSize());
+        Assertions.assertEquals("test", registry.getDefaultNamespace());
+
+        Identifier key1 = new Identifier("test", "key1");
+        registry.register(key1, 1);
+        Assertions.assertEquals(1, registry.getSize());
+        Assertions.assertEquals(1, registry.get(key1));
+
+        registry.register(new Identifier("test2", "key2"), 2);
+        Assertions.assertEquals(2, registry.getSize());
+        Assertions.assertEquals(1, registry.get(key1));
+        Assertions.assertEquals(2, registry.get(new Identifier("test2", "key2")));
+
+
+        FrozenRegistry<Identifier, Integer> frozen = registry.freeze();
+
+        Assertions.assertEquals(2, frozen.getSize());
+        Assertions.assertEquals(1, frozen.get(key1));
+        Assertions.assertEquals(2, frozen.get(new Identifier("test2", "key2")));
+
+        boolean caught = false;
+        try {
+            frozen.register(new Identifier("test", "wont_work"), 3);
+        } catch (IllegalStateException ex) {
+            caught = true;
+        }
+
+        Assertions.assertEquals(2, frozen.getSize());
+        Assertions.assertTrue(caught);
+
     }
 
 }

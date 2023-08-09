@@ -13,7 +13,6 @@ import java.util.*;
  * A requirement which contains one or more sub-requirements and an operation to determine how many need to be completed
  * @param <T> The type of object which the requirement applies to
  */
-@SuppressWarnings("unused")
 public class MultiRequirement<T> extends Requirement<T> {
 
     private final Operation op;
@@ -37,13 +36,10 @@ public class MultiRequirement<T> extends Requirement<T> {
         for(Requirement<T> req : requirements) {
             if(req.check(context)) {
                 completed++;
-                if(op.check(completed, requirements.size())) {
-                    return true;
-                }
             }
         }
 
-        return false;
+        return op.check(completed, requirements.size());
     }
 
     /**

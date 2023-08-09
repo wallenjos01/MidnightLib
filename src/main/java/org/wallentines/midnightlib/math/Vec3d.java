@@ -10,7 +10,6 @@ import java.util.Objects;
 /**
  * A three-dimensional vector of doubles
  */
-@SuppressWarnings("unused")
 public class Vec3d {
     private final double x;
     private final double y;

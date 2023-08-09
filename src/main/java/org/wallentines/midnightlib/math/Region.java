@@ -10,7 +10,6 @@ import java.util.Objects;
 /**
  * Represents a region in 3D space
  */
-@SuppressWarnings("unused")
 public class Region {
 
     private final Vec3d lower;
@@ -123,8 +122,8 @@ public class Region {
 
     public static final Serializer<Region> SERIALIZER = InlineSerializer.of(Objects::toString, Region::parse).or(
             ObjectSerializer.create(
-                    Vec3d.SERIALIZER.entry("position", Region::getLowerBound),
-                    Vec3d.SERIALIZER.entry("extent", Region::getExtent),
+                    Vec3d.SERIALIZER.entry("lower", Region::getLowerBound),
+                    Vec3d.SERIALIZER.entry("upper", Region::getUpperBound),
                     Region::new
             ));
 

@@ -119,6 +119,13 @@ public class TestMath {
         Assertions.assertEquals(12, parsed.getX());
         Assertions.assertEquals(-11, parsed.getY());
 
+
+        ConfigSection unparsedSection = new ConfigSection().with("x", 3).with("y", 1);
+        SerializeResult<Vec2i> result = Vec2i.SERIALIZER.deserialize(ConfigContext.INSTANCE, unparsedSection);
+
+        Assertions.assertTrue(result.isComplete());
+        Assertions.assertEquals(new Vec2i(3,1), result.getOrThrow());
+
     }
 
     @Test
@@ -179,6 +186,12 @@ public class TestMath {
         Assertions.assertEquals(12.1, parsed.getX());
         Assertions.assertEquals(-11.0, parsed.getY());
 
+
+        ConfigSection unparsedSection = new ConfigSection().with("x", 3).with("y", 1);
+        SerializeResult<Vec2d> result = Vec2d.SERIALIZER.deserialize(ConfigContext.INSTANCE, unparsedSection);
+
+        Assertions.assertTrue(result.isComplete());
+        Assertions.assertEquals(new Vec2d(3,1), result.getOrThrow());
     }
 
     @Test
@@ -248,6 +261,12 @@ public class TestMath {
         Assertions.assertEquals(12, parsed.getX());
         Assertions.assertEquals(-11, parsed.getY());
         Assertions.assertEquals(3, parsed.getZ());
+
+        ConfigSection unparsedSection = new ConfigSection().with("x", 3).with("y", 1).with("z", 2);
+        SerializeResult<Vec3i> result = Vec3i.SERIALIZER.deserialize(ConfigContext.INSTANCE, unparsedSection);
+
+        Assertions.assertTrue(result.isComplete());
+        Assertions.assertEquals(new Vec3i(3,1,2), result.getOrThrow());
 
     }
 
@@ -323,6 +342,12 @@ public class TestMath {
         Assertions.assertEquals(-11.0, parsed.getY());
         Assertions.assertEquals(0.5, parsed.getZ());
 
+        ConfigSection unparsedSection = new ConfigSection().with("x", 3).with("y", 1).with("z", 2);
+        SerializeResult<Vec3d> result = Vec3d.SERIALIZER.deserialize(ConfigContext.INSTANCE, unparsedSection);
+
+        Assertions.assertTrue(result.isComplete());
+        Assertions.assertEquals(new Vec3d(3,1,2), result.getOrThrow());
+
     }
 
     @Test
@@ -347,6 +372,12 @@ public class TestMath {
         Assertions.assertEquals(new Vec3d(10,10,0), parsed.getUpperBound());
         Assertions.assertEquals(new Vec3d(10,10,10), parsed.getExtent());
 
+        ConfigSection unparsedSection = new ConfigSection().with("lower", "3,6,9").with("upper", "12,33,15");
+        SerializeResult<Region> result = Region.SERIALIZER.deserialize(ConfigContext.INSTANCE, unparsedSection);
+
+        Assertions.assertTrue(result.isComplete());
+        Assertions.assertEquals(new Vec3d(3,6,9), result.getOrThrow().getLowerBound());
+        Assertions.assertEquals(new Vec3d(12,33,15), result.getOrThrow().getUpperBound());
 
     }
 

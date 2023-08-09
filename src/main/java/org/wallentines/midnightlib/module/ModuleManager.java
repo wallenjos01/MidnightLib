@@ -17,7 +17,6 @@ import java.util.*;
  * @param <T> The type of data modules expect
  * @param <M> The type of modules to load
  */
-@SuppressWarnings("unused")
 public class ModuleManager<T, M extends Module<T>> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("ModuleManager");
@@ -202,6 +201,17 @@ public class ModuleManager<T, M extends Module<T>> {
         if(mod == null) return;
 
         unloadWithDependents(mod, moduleId);
+        Collection<Class<? extends M>> classes = new ArrayList<>();
+
+        for(Map.Entry<Class<? extends M>, Identifier> ent : idsByClass.entrySet()) {
+            if(ent.getValue().equals(moduleId)) {
+                classes.add(ent.getKey());
+            }
+        }
+        for(Class<? extends M> clazz : classes) {
+            idsByClass.remove(clazz);
+        }
+
 
         loaded.remove(moduleId);
     }
@@ -219,6 +229,7 @@ public class ModuleManager<T, M extends Module<T>> {
         }
 
         loaded.clear();
+        idsByClass.clear();
     }
 
     /**

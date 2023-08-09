@@ -10,7 +10,6 @@ import java.util.Objects;
 /**
  * A two-dimensional vector of integers
  */
-@SuppressWarnings("unused")
 public class Vec2i {
     private final int x;
     private final int y;

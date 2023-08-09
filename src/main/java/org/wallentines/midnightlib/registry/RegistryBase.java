@@ -38,7 +38,7 @@ public abstract class RegistryBase<I, T> implements Iterable<T> {
      * @param id The ID of the value to register
      * @param value The value to register
      * @return The registered value
-     * @throws IllegalArgumentException If there is already a ID with the same name, or the value is a duplicate
+     * @throws IllegalArgumentException If there is already an ID with the same name, or the value is a duplicate
      */
     public T register(I id, T value) throws IllegalArgumentException {
 
