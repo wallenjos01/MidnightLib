@@ -1,5 +1,8 @@
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.wallentines.mdcfg.ConfigSection;
+import org.wallentines.mdcfg.serializer.ConfigContext;
+import org.wallentines.mdcfg.serializer.SerializeResult;
 import org.wallentines.midnightlib.math.*;
 
 public class TestMath {
@@ -34,18 +37,30 @@ public class TestMath {
         Assertions.assertEquals(50 * Math.sqrt(3), lightGray.getDistanceTo(gray));
 
         String unparsed = "123456";
-        Color parsed = Color.parse(unparsed);
+        Color parsed = Color.parseOrNull(unparsed);
 
+        Assertions.assertNotNull(parsed);
         Assertions.assertEquals(18, parsed.getRed());
         Assertions.assertEquals(52, parsed.getGreen());
         Assertions.assertEquals(86, parsed.getBlue());
 
         String unparsedPound = "#563412";
-        Color parsedPound = Color.parse(unparsedPound);
+        Color parsedPound = Color.parseOrNull(unparsedPound);
 
+        Assertions.assertNotNull(parsedPound);
         Assertions.assertEquals(86, parsedPound.getRed());
         Assertions.assertEquals(52, parsedPound.getGreen());
         Assertions.assertEquals(18, parsedPound.getBlue());
+
+        Assertions.assertEquals(Color.WHITE, Color.fromRGBI(15));
+
+        ConfigSection unparsedSection = new ConfigSection().with("red", 255).with("green", 12).with("blue", 200);
+        SerializeResult<Color> result = Color.SERIALIZER.deserialize(ConfigContext.INSTANCE, unparsedSection);
+
+        Assertions.assertTrue(result.isComplete());
+        Assertions.assertEquals(255, result.getOrThrow().getRed());
+        Assertions.assertEquals(12, result.getOrThrow().getGreen());
+        Assertions.assertEquals(200, result.getOrThrow().getBlue());
 
     }
 
@@ -100,6 +115,7 @@ public class TestMath {
         String unparsed = "12,-11";
         Vec2i parsed = Vec2i.parse(unparsed);
 
+        Assertions.assertNotNull(parsed);
         Assertions.assertEquals(12, parsed.getX());
         Assertions.assertEquals(-11, parsed.getY());
 
@@ -159,6 +175,7 @@ public class TestMath {
         String unparsed = "12.1,-11";
         Vec2d parsed = Vec2d.parse(unparsed);
 
+        Assertions.assertNotNull(parsed);
         Assertions.assertEquals(12.1, parsed.getX());
         Assertions.assertEquals(-11.0, parsed.getY());
 
@@ -227,6 +244,7 @@ public class TestMath {
         String unparsed = "12,-11,3";
         Vec3i parsed = Vec3i.parse(unparsed);
 
+        Assertions.assertNotNull(parsed);
         Assertions.assertEquals(12, parsed.getX());
         Assertions.assertEquals(-11, parsed.getY());
         Assertions.assertEquals(3, parsed.getZ());
@@ -300,6 +318,7 @@ public class TestMath {
         String unparsed = "12.1,-11,0.5";
         Vec3d parsed = Vec3d.parse(unparsed);
 
+        Assertions.assertNotNull(parsed);
         Assertions.assertEquals(12.1, parsed.getX());
         Assertions.assertEquals(-11.0, parsed.getY());
         Assertions.assertEquals(0.5, parsed.getZ());
@@ -323,6 +342,7 @@ public class TestMath {
         String unparsed = "0,10,0;10,0,-10";
         Region parsed = Region.parse(unparsed);
 
+        Assertions.assertNotNull(parsed);
         Assertions.assertEquals(new Vec3d(0,0,-10), parsed.getLowerBound());
         Assertions.assertEquals(new Vec3d(10,10,0), parsed.getUpperBound());
         Assertions.assertEquals(new Vec3d(10,10,10), parsed.getExtent());

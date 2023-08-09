@@ -1,5 +1,6 @@
 package org.wallentines.midnightlib.math;
 
+import org.jetbrains.annotations.Nullable;
 import org.wallentines.mdcfg.serializer.InlineSerializer;
 import org.wallentines.mdcfg.serializer.ObjectSerializer;
 import org.wallentines.mdcfg.serializer.Serializer;
@@ -101,14 +102,21 @@ public class Region {
     /**
      * Parses a region from the given string in the format "x0,y0,z0;x1,y1,z1"
      * @param string The string to parse
-     * @return A new region
+     * @return A new region, or null if the string is not in the correct format
      */
+    @Nullable
     public static Region parse(String string) {
 
         String[] ss = string.split(";");
 
+        if(ss.length != 2) return null;
+
         Vec3d lower = Vec3d.parse(ss[0]);
         Vec3d extent = Vec3d.parse(ss[1]);
+
+        if(lower == null || extent == null) {
+            return null;
+        }
 
         return new Region(lower, extent);
     }

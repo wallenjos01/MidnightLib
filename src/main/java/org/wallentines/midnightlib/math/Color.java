@@ -1,16 +1,13 @@
 package org.wallentines.midnightlib.math;
 
-import org.wallentines.mdcfg.serializer.InlineSerializer;
-import org.wallentines.mdcfg.serializer.ObjectSerializer;
-import org.wallentines.mdcfg.serializer.Serializer;
+import org.jetbrains.annotations.Nullable;
+import org.wallentines.mdcfg.serializer.*;
 
-import java.text.ParseException;
 import java.util.Objects;
 
 /**
  * A class which represents an RGB color
  */
-@SuppressWarnings("unused")
 public class Color {
 
     // An array of 4-bit (RGBI) colors with RGB values.
@@ -211,9 +208,8 @@ public class Color {
      * Parses a hex color code as a Color
      * @param hex The hex code to parse
      * @return A parsed color
-     * @throws ParseException if there are too little or too many characters, or invalid Hex characters
      */
-    public static Color parse(String hex) throws ParseException {
+    public static SerializeResult<Color> parse(String hex) {
 
         int r = -1;
         int g = -1;
@@ -223,13 +219,13 @@ public class Color {
                 hex = hex.substring(1);
             }
             if (hex.length() != 6) {
-                throw new ParseException("'" + hex + "' cannot be converted to a color! Wrong length!", 7);
+                return SerializeResult.failure("'" + hex + "' cannot be converted to a color! Wrong length!");
             }
             r = Integer.parseInt(hex.substring(0, 2), 16);
             g = Integer.parseInt(hex.substring(2, 4), 16);
             b = Integer.parseInt(hex.substring(4, 6), 16);
-        }
-        catch (NumberFormatException ex) {
+
+        } catch (NumberFormatException ex) {
 
             int offset = 1;
             if(r > -1) offset += 2;
@@ -237,28 +233,53 @@ public class Color {
 
             String invalid = hex.substring(offset, offset + 2);
 
-            throw new ParseException("'" + hex + "' cannot be converted to a color! Invalid hex string " + invalid + "!", offset);
+            return SerializeResult.failure("'" + hex + "' cannot be converted to a color! Invalid hex string " + invalid + "!");
         }
 
-        return new Color(r,g,b);
+        return SerializeResult.success(new Color(r,g,b));
+    }
+
+
+    /**
+     * Parses a hex color code as a Color
+     * @param hex The hex code to parse
+     * @return A parsed color, or null if parsing fails
+     */
+    @Nullable
+    public static Color parseOrNull(String hex) {
+        return parse(hex).get().orElse(null);
     }
 
     public static final Color WHITE = new Color(16777215);
 
     public static final Serializer<Color> SERIALIZER =
-            InlineSerializer.of(Color::toHex, str -> {
-                try {
-                    return Color.parse(str);
-                } catch (ParseException ex) {
-                    return null;
+            new Serializer<>() {
+                @Override
+                public <O> SerializeResult<O> serialize(SerializeContext<O> context, Color value) {
+
+                    return SerializeResult.success(context.toString(value.toHex()));
                 }
-            }).or(
-            ObjectSerializer.create(
-                    Serializer.INT.entry("red", Color::getRed),
-                    Serializer.INT.entry("green", Color::getGreen),
-                    Serializer.INT.entry("blue", Color::getBlue),
-                    Color::new
-            )
-    );
+
+                @Override
+                public <O> SerializeResult<Color> deserialize(SerializeContext<O> context, O value) {
+
+                    if(context.isString(value)) {
+                        return parse(context.asString(value));
+                    }
+                    if(context.isMap(value)) {
+                        Number r = context.asNumber(context.get("red", value));
+                        Number g = context.asNumber(context.get("green", value));
+                        Number b = context.asNumber(context.get("blue", value));
+
+                        if(r == null || g == null || b == null) {
+                            return SerializeResult.failure("Missing one or more color channels!");
+                        }
+
+                        return SerializeResult.success(new Color(r.intValue(),g.intValue(),b.intValue()));
+                    }
+
+                    return SerializeResult.failure("Don't know how to parse " + value + " as a color!");
+                }
+            };
 }
 

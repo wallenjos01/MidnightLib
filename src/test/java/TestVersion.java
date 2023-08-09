@@ -9,21 +9,25 @@ public class TestVersion {
 
         Version version = Version.fromString("1.0.0-bruh.0+gamer");
 
-        Assertions.assertEquals(version.getMajorVersion(), 1);
-        Assertions.assertEquals(version.getMinorVersion(), 0);
-        Assertions.assertEquals(version.getPatchVersion(), 0);
-        Assertions.assertEquals(version.getPreReleaseData().length, 2);
-        Assertions.assertEquals(version.getBuildMetadata().length, 1);
-        Assertions.assertEquals(version.getPreReleaseData()[0], "bruh");
-        Assertions.assertEquals(version.getPreReleaseData()[1], "0");
-        Assertions.assertEquals(version.getBuildMetadata()[0], "gamer");
+        Assertions.assertNotNull(version);
+        Assertions.assertEquals(1, version.getMajorVersion());
+        Assertions.assertEquals(0, version.getMinorVersion());
+        Assertions.assertEquals(0, version.getPatchVersion());
+        Assertions.assertEquals("bruh.0", version.getPreReleaseData());
+        Assertions.assertEquals("gamer", version.getBuildMetadata());
 
         Version ver1 = Version.fromString("1.0");
+        Assertions.assertNotNull(ver1);
         Assertions.assertEquals(0, ver1.getPatchVersion());
 
         Version ver0 = Version.fromString("1");
+        Assertions.assertNotNull(ver0);
         Assertions.assertEquals(0, ver0.getMinorVersion());
         Assertions.assertEquals(0, ver0.getPatchVersion());
+
+        Assertions.assertEquals(ver0, ver1);
+
+        Assertions.assertTrue(ver1.isGreater(version));
 
     }
 
