@@ -1,7 +1,13 @@
 package org.wallentines.midnightlib.types;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.*;
 
+/**
+ * A collection which automatically sorts its contents as they are added
+ * @param <T> The type of objects in the collection
+ */
 public class SortedCollection<T extends Comparable<T>> implements Collection<T> {
 
     private final List<T> internal = new ArrayList<>();
@@ -32,7 +38,7 @@ public class SortedCollection<T extends Comparable<T>> implements Collection<T> 
     }
 
     @Override
-    public <T1> T1[] toArray(T1[] a) {
+    public <T1> T1[] toArray(T1 @NotNull [] a) {
         return internal.toArray(a);
     }
 
@@ -56,22 +62,22 @@ public class SortedCollection<T extends Comparable<T>> implements Collection<T> 
     }
 
     @Override
-    public boolean containsAll(Collection<?> c) {
+    public boolean containsAll(@NotNull Collection<?> c) {
         return new HashSet<>(internal).containsAll(c);
     }
 
     @Override
-    public boolean addAll(Collection<? extends T> c) {
+    public boolean addAll(@NotNull Collection<? extends T> c) {
         return internal.addAll(c);
     }
 
     @Override
-    public boolean removeAll(Collection<?> c) {
+    public boolean removeAll(@NotNull Collection<?> c) {
         return internal.removeAll(c);
     }
 
     @Override
-    public boolean retainAll(Collection<?> c) {
+    public boolean retainAll(@NotNull Collection<?> c) {
         return internal.retainAll(c);
     }
 
