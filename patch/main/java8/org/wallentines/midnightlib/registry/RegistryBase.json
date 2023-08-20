@@ -1,0 +1,13 @@
+[
+  {
+    "lines": [
+      {
+        "find": "public Iterator<T> iterator() {",
+        "offset": 1
+      }
+    ],
+    "type": "replace",
+    "find": "return new Iterator<>()",
+    "replace": "return new Iterator<T>()"
+  }
+]

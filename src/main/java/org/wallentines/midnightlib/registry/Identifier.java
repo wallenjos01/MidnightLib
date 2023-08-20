@@ -74,7 +74,7 @@ public class Identifier {
 
         if(toParse == null) throw EXCEPTION;
 
-        String[] ss = toParse.strip().split(":");
+        String[] ss = toParse.trim().split(":");
 
         // Throw an error if there are too many colons
         if(ss.length == 0 || ss.length > 2) {

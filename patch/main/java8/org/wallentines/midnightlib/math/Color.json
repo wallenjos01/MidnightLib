@@ -1,0 +1,14 @@
+[
+  {
+    "lines": [ "all" ],
+    "type": "replace",
+    "find": "public static final Serializer<Color> SERIALIZER = new Serializer<>()",
+    "replace": "public static final Serializer<Color> SERIALIZER = new Serializer<Color>()"
+  },
+  {
+    "lines": [ "all" ],
+    "type": "replace",
+    "find": "if(!(obj instanceof Color c)) return false;",
+    "replace": "if(!(obj instanceof Color)) return false; Color c = (Color) obj;"
+  }
+]

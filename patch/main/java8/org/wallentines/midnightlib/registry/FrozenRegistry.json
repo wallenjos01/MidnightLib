@@ -1,0 +1,23 @@
+[
+  {
+    "lines": [
+      {
+        "find": "package org.wallentines.midnightlib.registry;"
+      }
+    ],
+    "type": "insert",
+    "value": "import java.util.HashMap;\nimport java.util.ArrayList;"
+  },
+  {
+    "lines": [ "all" ],
+    "type": "replace",
+    "find": "List.copyOf(",
+    "replace": "new ArrayList<>("
+  },
+  {
+    "lines": [ "all" ],
+    "type": "replace",
+    "find": "Map.copyOf(",
+    "replace": "new HashMap<>("
+  }
+]

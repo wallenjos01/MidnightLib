@@ -11,7 +11,7 @@ import java.util.Objects;
 public class Color {
 
     // An array of 4-bit (RGBI) colors with RGB values.
-    private static final Color[] FOUR_BIT_COLORS = new Color[]{new Color(0, 0, 0), new Color(0, 0, 170), new Color(0, 170, 0), new Color(0, 170, 170), new Color(170, 0, 0), new Color(170, 0, 170), new Color(255, 170, 0), new Color(170, 170, 170), new Color(85, 85, 85), new Color(85, 85, 255), new Color(85, 255, 85), new Color(85, 255, 255), new Color(255, 85, 85), new Color(255, 85, 255), new Color(255, 255, 85), new Color(255, 255, 255)};
+    private static final Color[] FOUR_BIT_COLORS = new Color[] {new Color(0, 0, 0), new Color(0, 0, 170), new Color(0, 170, 0), new Color(0, 170, 170), new Color(170, 0, 0), new Color(170, 0, 170), new Color(255, 170, 0), new Color(170, 170, 170), new Color(85, 85, 85), new Color(85, 85, 255), new Color(85, 255, 85), new Color(85, 255, 255), new Color(255, 85, 85), new Color(255, 85, 255), new Color(255, 255, 85), new Color(255, 255, 255)};
 
     private final int red;
     private final int green;
@@ -133,9 +133,7 @@ public class Color {
 
     @Override
     public boolean equals(Object obj) {
-        if(!(obj instanceof Color)) return false;
-
-        Color c = (Color) obj;
+        if(!(obj instanceof Color c)) return false;
 
         return c.red == red && c.green == green && c.blue == blue;
     }
@@ -252,34 +250,33 @@ public class Color {
 
     public static final Color WHITE = new Color(16777215);
 
-    public static final Serializer<Color> SERIALIZER =
-            new Serializer<>() {
-                @Override
-                public <O> SerializeResult<O> serialize(SerializeContext<O> context, Color value) {
+    public static final Serializer<Color> SERIALIZER = new Serializer<>() {
+            @Override
+            public <O> SerializeResult<O> serialize(SerializeContext<O> context, Color value) {
 
-                    return SerializeResult.success(context.toString(value.toHex()));
+                return SerializeResult.success(context.toString(value.toHex()));
+            }
+
+            @Override
+            public <O> SerializeResult<Color> deserialize(SerializeContext<O> context, O value) {
+
+                if(context.isString(value)) {
+                    return parse(context.asString(value));
                 }
+                if(context.isMap(value)) {
+                    Number r = context.asNumber(context.get("red", value));
+                    Number g = context.asNumber(context.get("green", value));
+                    Number b = context.asNumber(context.get("blue", value));
 
-                @Override
-                public <O> SerializeResult<Color> deserialize(SerializeContext<O> context, O value) {
-
-                    if(context.isString(value)) {
-                        return parse(context.asString(value));
-                    }
-                    if(context.isMap(value)) {
-                        Number r = context.asNumber(context.get("red", value));
-                        Number g = context.asNumber(context.get("green", value));
-                        Number b = context.asNumber(context.get("blue", value));
-
-                        if(r == null || g == null || b == null) {
-                            return SerializeResult.failure("Missing one or more color channels!");
-                        }
-
-                        return SerializeResult.success(new Color(r.intValue(),g.intValue(),b.intValue()));
+                    if(r == null || g == null || b == null) {
+                        return SerializeResult.failure("Missing one or more color channels!");
                     }
 
-                    return SerializeResult.failure("Don't know how to parse " + value + " as a color!");
+                    return SerializeResult.success(new Color(r.intValue(),g.intValue(),b.intValue()));
                 }
-            };
+
+                return SerializeResult.failure("Don't know how to parse " + value + " as a color!");
+            }
+    };
 }
 

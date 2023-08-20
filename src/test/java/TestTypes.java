@@ -2,10 +2,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.wallentines.midnightlib.types.*;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class TestTypes {
@@ -184,7 +181,7 @@ public class TestTypes {
     @Test
     public void testRandomizedQueue() {
 
-        List<String> objects = List.of("String1", "String2", "String3");
+        List<String> objects = Arrays.asList("String1", "String2", "String3");
 
         RandomizedQueue<String> queue = new RandomizedQueue<>();
         queue.addAll(objects);
@@ -205,7 +202,7 @@ public class TestTypes {
     @Test
     public void testRandomizedLoopingQueue() {
 
-        RandomizedQueue<String> queue = new RandomizedLoopingQueue<>(List.of("String1", "String2", "String3"));
+        RandomizedQueue<String> queue = new RandomizedLoopingQueue<>(Arrays.asList("String1", "String2", "String3"));
 
         Assertions.assertEquals(3, queue.size());
 

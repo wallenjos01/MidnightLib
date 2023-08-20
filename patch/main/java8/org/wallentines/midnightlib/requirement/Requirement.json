@@ -1,0 +1,13 @@
+[
+  {
+    "lines": [
+      {
+        "find": "public static <T> Serializer<Requirement<T>> serializer(",
+        "offset": 1
+      }
+    ],
+    "type": "replace",
+    "find": "return new Serializer<>()",
+    "replace": "return new Serializer<Requirement<T>>()"
+  }
+]

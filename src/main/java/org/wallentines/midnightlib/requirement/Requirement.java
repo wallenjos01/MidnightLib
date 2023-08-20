@@ -74,7 +74,6 @@ public class Requirement<T> {
      * @param <T> The type of object checked by the requirement types in the registry
      */
     public static <T> Serializer<Requirement<T>> serializer(RegistryBase<?, RequirementType<T>> registry) {
-
         return new Serializer<>() {
             @Override
             public <O> SerializeResult<O> serialize(SerializeContext<O> context, Requirement<T> value) {
