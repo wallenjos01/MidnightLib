@@ -7,12 +7,12 @@ plugins {
 }
 
 group = "org.wallentines"
-version = "1.3.0"
+version = "1.3.1-SNAPSHOT"
 
-java.sourceCompatibility = JavaVersion.VERSION_11
-java.targetCompatibility = JavaVersion.VERSION_11
-
-java.withSourcesJar()
+java {
+    toolchain.languageVersion.set(JavaLanguageVersion.of(11))
+    withSourcesJar()
+}
 
 repositories {
     mavenCentral()
@@ -22,7 +22,7 @@ repositories {
 
 dependencies {
 
-    api("org.wallentines:midnightcfg:1.0.1")
+    api("org.wallentines:midnightcfg-api:2.0.0-SNAPSHOT")
     compileOnly("org.jetbrains:annotations:24.0.1")
 
     implementation("org.slf4j:slf4j-api:2.0.7")
@@ -38,20 +38,14 @@ tasks.test {
 }
 
 publishing {
-    publications {
-        create<MavenPublication>("maven") {
-            groupId = group as String
-            version = version as String
-            from(components["java"])
-        }
+
+    publications.create<MavenPublication>("maven") {
+        from(components["java"])
     }
-    repositories {
-        if (project.hasProperty("pubUrl")) {
-            maven {
-                name = "pub"
-                url = URI.create(project.properties["pubUrl"] as String)
-                credentials(PasswordCredentials::class.java)
-            }
+    if (project.hasProperty("pubUrl")) {
+        repositories.maven(project.properties["pubUrl"] as String) {
+            name = "pub"
+            credentials(PasswordCredentials::class.java)
         }
     }
 }

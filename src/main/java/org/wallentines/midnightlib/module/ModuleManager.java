@@ -70,6 +70,8 @@ public class ModuleManager<T, M extends Module<T>> {
 
         config.fill(generateConfig(registry));
 
+        Registry<ModuleInfo<T,M>> availableModules = new Registry<>(registry.getDefaultNamespace());
+
         int count = 0;
         for(String key : config.getKeys()) {
 
@@ -83,6 +85,13 @@ public class ModuleManager<T, M extends Module<T>> {
                 continue;
             }
 
+            if(config.getSection(key).getBoolean("enabled")) {
+                availableModules.register(id, info);
+            }
+
+        }
+
+        for(ModuleInfo<T, M> info : availableModules) {
             count += loadWithDependencies(info, config, data, registry, new HashSet<>());
         }
 
@@ -115,8 +124,6 @@ public class ModuleManager<T, M extends Module<T>> {
         if(defaults == null) defaults = new ConfigSection();
 
         config.fill(defaults);
-
-        if(!config.getBoolean("enabled")) return false;
 
         for(Identifier dep : info.getDependencies()) {
             if(!loaded.hasKey(dep)) {
@@ -355,8 +362,8 @@ public class ModuleManager<T, M extends Module<T>> {
 
         if(loaded.get(info.getId()) != null) return 0;
 
-        // Avoid infinite recursion if a module depends on itself by keeping track of which modules are currently in the
-        // process of loading
+        // Avoid infinite recursion if a module depends on itself by keeping track of which modules are currently in
+        // the process of loading
         if(!loading.add(info)) {
             LOGGER.warn("Detected cyclical dependency while loading module " + info.getId());
             return 0;
