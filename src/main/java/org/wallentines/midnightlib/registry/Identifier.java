@@ -56,7 +56,7 @@ public class Identifier {
         }
 
         String[] ss = toParse.split(":");
-        if(ss.length > 2) {
+        if(ss.length != 2) {
             throw EXCEPTION;
         }
 
@@ -86,7 +86,11 @@ public class Identifier {
             throw EXCEPTION;
         }
 
-        return ss.length == 1 ? new Identifier(defaultNamespace, toParse) : new Identifier(ss[0], ss[1]);
+        if(ss.length == 2 && ss[0].isEmpty()) {
+            return new Identifier(defaultNamespace, ss[1]);
+        }
+
+        return ss.length == 1 ? new Identifier(defaultNamespace, ss[0]) : new Identifier(ss[0], ss[1]);
     }
 
     @Override

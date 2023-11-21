@@ -262,7 +262,7 @@ public abstract class RegistryBase<I, T> implements Iterable<T> {
      * @return A list of registered value IDs
      */
     public Collection<I> getIds() {
-        return indexById.keySet();
+        return ids;
     }
 
     /**
@@ -280,16 +280,13 @@ public abstract class RegistryBase<I, T> implements Iterable<T> {
     }
 
     @Override
-    public Iterator<T> iterator() {
+    public @NotNull Iterator<T> iterator() {
         return new Iterator<>() {
-
             private int index = 0;
-
             @Override
             public boolean hasNext() {
                 return index < size;
             }
-
             @Override
             public T next() {
                 T out = valueAtIndex(index);

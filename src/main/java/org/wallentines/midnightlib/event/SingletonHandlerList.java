@@ -23,6 +23,10 @@ public class SingletonHandlerList<T> extends HandlerList<T> {
         }
     }
 
+    public T getPreviousValue() {
+        return completed;
+    }
+
     /**
      * Clears the stored event
      */
