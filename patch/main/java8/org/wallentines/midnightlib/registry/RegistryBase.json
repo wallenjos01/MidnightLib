@@ -2,7 +2,7 @@
   {
     "lines": [
       {
-        "find": "public Iterator<T> iterator() {",
+        "find": "public @NotNull Iterator<T> iterator() {",
         "offset": 1
       }
     ],

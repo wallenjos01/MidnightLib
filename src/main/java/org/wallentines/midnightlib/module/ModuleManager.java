@@ -1,6 +1,7 @@
 package org.wallentines.midnightlib.module;
 
 import org.jetbrains.annotations.Nullable;
+import org.wallentines.mdcfg.ConfigPrimitive;
 import org.wallentines.mdcfg.ConfigSection;
 import org.wallentines.mdcfg.serializer.ConfigContext;
 import org.wallentines.mdcfg.serializer.SerializeResult;
@@ -69,7 +70,7 @@ public class ModuleManager<T, M extends Module<T>> {
 
             if(!config.hasSection(key)) continue;
 
-            SerializeResult<ModuleInfo<T, M>> res = registry.nameSerializer().deserialize(ConfigContext.INSTANCE, config.get(key));
+            SerializeResult<ModuleInfo<T, M>> res = registry.nameSerializer().deserialize(ConfigContext.INSTANCE, new ConfigPrimitive(key));
             if(!res.isComplete()) {
                 LOGGER.warn("Unknown module: " + key + " requested. Skipping...");
                 continue;
