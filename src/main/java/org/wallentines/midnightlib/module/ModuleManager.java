@@ -2,6 +2,8 @@ package org.wallentines.midnightlib.module;
 
 import org.jetbrains.annotations.Nullable;
 import org.wallentines.mdcfg.ConfigSection;
+import org.wallentines.mdcfg.serializer.ConfigContext;
+import org.wallentines.mdcfg.serializer.SerializeResult;
 import org.wallentines.midnightlib.event.Event;
 import org.wallentines.midnightlib.event.HandlerList;
 import org.wallentines.midnightlib.registry.Identifier;
@@ -9,6 +11,7 @@ import org.wallentines.midnightlib.registry.Registry;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.wallentines.midnightlib.registry.RegistryBase;
 
 import java.util.*;
 
@@ -20,8 +23,6 @@ import java.util.*;
 public class ModuleManager<T, M extends Module<T>> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("ModuleManager");
-
-    private final String defaultNamespace;
 
     private final Registry<M> loaded;
     private final HashMap<Class<? extends M>, Identifier> idsByClass = new HashMap<>();
@@ -39,30 +40,21 @@ public class ModuleManager<T, M extends Module<T>> {
 
 
     /**
-     * Constructs a new module manager with the default namespace "midnight"
+     * Constructs a new module manager
      */
     public ModuleManager() {
-        this("midnight");
-    }
-
-    /**
-     * Constructs a new module manager with the given default namespace
-     * @param defaultNamespace The default namespace for loaded modules
-     */
-    public ModuleManager(String defaultNamespace) {
-        this.defaultNamespace = defaultNamespace;
-        this.loaded = new Registry<>(defaultNamespace);
+        this.loaded = new Registry<>("unknown");
     }
 
     /**
      * Creates and initializes all modules from the given registry, reading the given config and passing in the given
      * data. All existing modules will be unloaded first.
-     * @param config The module registry config (see {@link ModuleManager#generateConfig(Registry) generateConfig})
+     * @param config The module registry config (see {@link ModuleManager#generateConfig(RegistryBase) generateConfig})
      * @param data The data to pass into module initializers
      * @param registry The registry when module information is stored.
      * @return How many modules were loaded
      */
-    public int loadAll(ConfigSection config, T data, Registry<ModuleInfo<T, M>> registry) {
+    public int loadAll(ConfigSection config, T data, RegistryBase<Identifier, ModuleInfo<T, M>> registry) {
 
         if(loaded.getSize() > 0) {
             unloadAll();
@@ -70,23 +62,21 @@ public class ModuleManager<T, M extends Module<T>> {
 
         config.fill(generateConfig(registry));
 
-        Registry<ModuleInfo<T,M>> availableModules = new Registry<>(registry.getDefaultNamespace());
+        List<ModuleInfo<T,M>> availableModules = new ArrayList<>();
 
         int count = 0;
         for(String key : config.getKeys()) {
 
             if(!config.hasSection(key)) continue;
 
-            Identifier id = Identifier.parseOrDefault(key, defaultNamespace);
-
-            ModuleInfo<T, M> info = registry.get(id);
-            if(info == null) {
-                LOGGER.warn("Unknown module: " + id + " requested. Skipping...");
+            SerializeResult<ModuleInfo<T, M>> res = registry.nameSerializer().deserialize(ConfigContext.INSTANCE, config.get(key));
+            if(!res.isComplete()) {
+                LOGGER.warn("Unknown module: " + key + " requested. Skipping...");
                 continue;
             }
 
             if(config.getSection(key).getBoolean("enabled")) {
-                availableModules.register(id, info);
+                availableModules.add(res.getOrThrow());
             }
 
         }
@@ -254,11 +244,11 @@ public class ModuleManager<T, M extends Module<T>> {
 
     /**
      * Reloads all modules
-     * @param config The module registry config (see {@link ModuleManager#generateConfig(Registry) generateConfig})
+     * @param config The module registry config (see {@link ModuleManager#generateConfig(RegistryBase) generateConfig})
      * @param data The data to pass into the module initializer
      * @param reg The registry containing all modules to load
      */
-    public void reloadAll(ConfigSection config, T data, Registry<ModuleInfo<T, M>> reg) {
+    public void reloadAll(ConfigSection config, T data, RegistryBase<Identifier, ModuleInfo<T, M>> reg) {
 
         unloadAll();
         loadAll(config, data, reg);
@@ -310,7 +300,7 @@ public class ModuleManager<T, M extends Module<T>> {
      * @param <T> The type of data modules expect during initialization
      * @param <M> The type of modules to load
      */
-    public static <T, M extends Module<T>> ConfigSection generateConfig(Registry<ModuleInfo<T, M>> reg) {
+    public static <T, M extends Module<T>> ConfigSection generateConfig(RegistryBase<Identifier, ModuleInfo<T, M>> reg) {
 
         ConfigSection out = new ConfigSection();
         for(ModuleInfo<T, M> info : reg) {
@@ -358,7 +348,7 @@ public class ModuleManager<T, M extends Module<T>> {
     }
 
 
-    private int loadWithDependencies(ModuleInfo<T, M> info, ConfigSection config, T data, Registry<ModuleInfo<T, M>> registry, Collection<ModuleInfo<T, M>> loading) {
+    private int loadWithDependencies(ModuleInfo<T, M> info, ConfigSection config, T data, RegistryBase<Identifier, ModuleInfo<T, M>> registry, Collection<ModuleInfo<T, M>> loading) {
 
         if(loaded.get(info.getId()) != null) return 0;
 

@@ -20,13 +20,15 @@ public abstract class RegistryBase<I, T> implements Iterable<T> {
     protected final Map<T, Integer> indexByValue;
     protected int size;
     protected final boolean allowDuplicateValues;
+    protected final boolean allowNullValues;
 
-    protected RegistryBase(boolean allowDuplicateValues) {
-        this(allowDuplicateValues, new ArrayList<>(), new ArrayList<>(), new HashMap<>(), new HashMap<>());
+    protected RegistryBase(boolean allowDuplicateValues, boolean allowNullValues) {
+        this(allowDuplicateValues, allowNullValues, new ArrayList<>(), new ArrayList<>(), new HashMap<>(), new HashMap<>());
     }
 
-    protected RegistryBase(boolean allowDuplicateValues, List<I> ids, List<T> values, Map<I, Integer> indexById, Map<T, Integer> indexByValue) {
+    protected RegistryBase(boolean allowDuplicateValues, boolean allowNullValues, List<I> ids, List<T> values, Map<I, Integer> indexById, Map<T, Integer> indexByValue) {
         this.allowDuplicateValues = allowDuplicateValues;
+        this.allowNullValues = allowNullValues;
         this.ids = ids;
         this.values = values;
         this.indexById = indexById;
@@ -42,6 +44,9 @@ public abstract class RegistryBase<I, T> implements Iterable<T> {
      */
     public T register(I id, T value) throws IllegalArgumentException {
 
+        if(value == null && !allowNullValues) {
+            throw new IllegalArgumentException("This registry cannot accept null values!");
+        }
         if(ids.contains(id)) {
             throw new IllegalArgumentException("Attempt to register value with duplicate ID!");
         }

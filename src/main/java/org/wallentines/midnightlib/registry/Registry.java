@@ -17,16 +17,17 @@ public class Registry<T> extends RegistryBase<Identifier, T> {
      * @param defaultNamespace The default namespace which will be used when deserializing IDs
      */
     public Registry(String defaultNamespace) {
-        this(defaultNamespace, false);
+        this(defaultNamespace, false, false);
     }
 
     /**
      * Constructs a new Registry with the given default namespace and duplicate strategy
      * @param defaultNamespace The default namespace which will be used when deserializing IDs
-     * @param allowDuplicateEntries Whether the same object can be registered to multiple IDs. Defaults to false
+     * @param allowDuplicateValues Whether the same object can be registered to multiple IDs. Defaults to false
+     * @param allowNullValues Whether null values can be registered. Defaults to false
      */
-    public Registry(String defaultNamespace, boolean allowDuplicateEntries) {
-        super(allowDuplicateEntries);
+    public Registry(String defaultNamespace, boolean allowDuplicateValues, boolean allowNullValues) {
+        super(allowDuplicateValues, allowNullValues);
         this.defaultNamespace = defaultNamespace;
     }
 
