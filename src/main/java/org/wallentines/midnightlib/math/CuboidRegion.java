@@ -65,6 +65,11 @@ public class CuboidRegion implements Region {
     }
 
     @Override
+    public CuboidRegion getBoundingBox() {
+        return this;
+    }
+
+    @Override
     public <T> SerializeResult<T> serialize(SerializeContext<T> context) {
         return SERIALIZER.serialize(context, this);
     }

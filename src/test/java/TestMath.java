@@ -351,7 +351,7 @@ public class TestMath {
     }
 
     @Test
-    public void testRegion() {
+    public void testCuboidRegion() {
 
         CuboidRegion region = new CuboidRegion(new Vec3d(1,6,3), new Vec3d(6.5,4,8));
 
@@ -378,6 +378,35 @@ public class TestMath {
         Assertions.assertTrue(result.isComplete());
         Assertions.assertEquals(new Vec3d(3,6,9), result.getOrThrow().getLowerBound());
         Assertions.assertEquals(new Vec3d(12,33,15), result.getOrThrow().getUpperBound());
+
+    }
+
+    @Test
+    public void testSphereRegion() {
+
+        SphereRegion region = new SphereRegion(new Vec3d(1,-2,3), 3.0);
+
+        Assertions.assertEquals(new Vec3d(1,-2,3), region.getOrigin());
+        Assertions.assertEquals(3.0, region.getRadius());
+
+        Assertions.assertTrue(region.isWithin(new Vec3d(2.1,0,4)));
+        Assertions.assertFalse(region.isWithin(new Vec3d(0,9.3,4.4)));
+        Assertions.assertTrue(region.isWithin(new Vec3i(2,-1,4)));
+        Assertions.assertFalse(region.isWithin(new Vec3i(0,9,4)));
+
+        String unparsed = "0,10,0r3.5";
+        SphereRegion parsed = SphereRegion.parse(unparsed);
+
+        Assertions.assertNotNull(parsed);
+        Assertions.assertEquals(new Vec3d(0,10,0), parsed.getOrigin());
+        Assertions.assertEquals(3.5, parsed.getRadius());
+
+        ConfigSection unparsedSection = new ConfigSection().with("origin", "3,6,9").with("radius", 12.5);
+        SerializeResult<SphereRegion> result = SphereRegion.SERIALIZER.deserialize(ConfigContext.INSTANCE, unparsedSection);
+
+        Assertions.assertTrue(result.isComplete(), result.getError());
+        Assertions.assertEquals(new Vec3d(3,6,9), result.getOrThrow().getOrigin());
+        Assertions.assertEquals(12.5, result.getOrThrow().getRadius());
 
     }
 

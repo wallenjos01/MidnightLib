@@ -5,6 +5,9 @@ import org.wallentines.mdcfg.serializer.SerializeContext;
 import org.wallentines.mdcfg.serializer.SerializeResult;
 import org.wallentines.mdcfg.serializer.Serializer;
 
+/**
+ * An interface representing a region in 3D space
+ */
 public interface Region {
 
     /**
@@ -22,6 +25,8 @@ public interface Region {
     default boolean isWithin(Vec3i vector) {
         return isWithin(new Vec3d(vector.getX(), vector.getY(), vector.getZ()));
     }
+
+    CuboidRegion getBoundingBox();
 
     <T> SerializeResult<T> serialize(SerializeContext<T> context);
 

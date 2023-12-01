@@ -5,6 +5,9 @@ import org.wallentines.mdcfg.serializer.*;
 
 import java.util.Objects;
 
+/**
+ * A class representing a spherical region in 3D space
+ */
 public class SphereRegion implements Region {
 
     private final Vec3d origin;
@@ -25,7 +28,12 @@ public class SphereRegion implements Region {
 
     @Override
     public boolean isWithin(Vec3d vector) {
-        return vector.distanceSquared(origin) < (radius * radius);
+        return vector.distanceSquared(origin) <= (radius * radius);
+    }
+
+    @Override
+    public CuboidRegion getBoundingBox() {
+        return new CuboidRegion(origin.subtract(radius), origin.add(radius));
     }
 
     @Override
@@ -36,6 +44,19 @@ public class SphereRegion implements Region {
     @Override
     public String toString() {
         return origin.toString() + "r" + radius;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        SphereRegion region = (SphereRegion) o;
+        return Objects.equals(origin, region.origin) && radius == region.radius;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(origin, radius);
     }
 
     /**
