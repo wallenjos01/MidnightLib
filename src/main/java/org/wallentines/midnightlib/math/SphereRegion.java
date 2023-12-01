@@ -86,10 +86,11 @@ public class SphereRegion implements Region {
         return new SphereRegion(origin, radius);
     }
 
-    public static final Serializer<SphereRegion> SERIALIZER = ObjectSerializer.create(
-            Vec3d.SERIALIZER.entry("origin", SphereRegion::getOrigin),
-            Serializer.DOUBLE.entry("radius", SphereRegion::getRadius),
-            SphereRegion::new
-    ).or(InlineSerializer.of(Objects::toString, SphereRegion::parse));
+    public static final Serializer<SphereRegion> SERIALIZER =
+            InlineSerializer.of(Objects::toString, SphereRegion::parse)
+                    .or(ObjectSerializer.create(
+                            Vec3d.SERIALIZER.entry("origin", SphereRegion::getOrigin),
+                            Serializer.DOUBLE.entry("radius", SphereRegion::getRadius),
+                            SphereRegion::new));
 
 }

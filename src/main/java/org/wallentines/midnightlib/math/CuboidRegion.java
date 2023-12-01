@@ -116,10 +116,10 @@ public class CuboidRegion implements Region {
     }
 
     public static final Serializer<CuboidRegion> SERIALIZER =
-            ObjectSerializer.create(
-                    Vec3d.SERIALIZER.entry("lower", CuboidRegion::getLowerBound),
-                    Vec3d.SERIALIZER.entry("upper", CuboidRegion::getUpperBound),
-                    CuboidRegion::new
-            ).or(InlineSerializer.of(Objects::toString, CuboidRegion::parse));
+            InlineSerializer.of(Objects::toString, CuboidRegion::parse)
+                    .or(ObjectSerializer.create(
+                            Vec3d.SERIALIZER.entry("lower", CuboidRegion::getLowerBound),
+                            Vec3d.SERIALIZER.entry("upper", CuboidRegion::getUpperBound),
+                            CuboidRegion::new));
 
 }

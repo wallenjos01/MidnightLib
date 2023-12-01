@@ -26,11 +26,23 @@ public interface Region {
         return isWithin(new Vec3d(vector.getX(), vector.getY(), vector.getZ()));
     }
 
+    /**
+     * Gets an axis-aligned bounding box which contains the entire region
+     * @return A CuboidRegion representing a bounding box
+     */
     CuboidRegion getBoundingBox();
 
+    /**
+     * Serializes the region into a type defined by the given serialization context
+     * @param context The context by which to serialize
+     * @return A serialized object
+     * @param <T> The type of to serialize into
+     */
     <T> SerializeResult<T> serialize(SerializeContext<T> context);
 
-
+    /**
+     * A generalized serializer for both cuboid and spherical regions
+     */
     Serializer<Region> SERIALIZER = new Serializer<>() {
         @Override
         public <O> SerializeResult<O> serialize(SerializeContext<O> context, Region value) {
@@ -39,7 +51,6 @@ public interface Region {
 
         @Override
         public <O> SerializeResult<Region> deserialize(SerializeContext<O> context, O value) {
-
             return CuboidRegion.SERIALIZER.deserialize(context, value)
                     .flatMap(cr -> (Region) cr)
                     .mapError(() -> SphereRegion.SERIALIZER.deserialize(context, value)
