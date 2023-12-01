@@ -1,0 +1,8 @@
+[
+  {
+    "lines": [ "all" ],
+    "type": "replace",
+    "find": "Serializer<Region> SERIALIZER = new Serializer<>()",
+    "replace": "Serializer<Region> SERIALIZER = new Serializer<Region>()"
+  }
+]

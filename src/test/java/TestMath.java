@@ -353,7 +353,7 @@ public class TestMath {
     @Test
     public void testRegion() {
 
-        Region region = new Region(new Vec3d(1,6,3), new Vec3d(6.5,4,8));
+        CuboidRegion region = new CuboidRegion(new Vec3d(1,6,3), new Vec3d(6.5,4,8));
 
         Assertions.assertEquals(new Vec3d(1,4,3), region.getLowerBound());
         Assertions.assertEquals(new Vec3d(6.5,6,8), region.getUpperBound());
@@ -365,7 +365,7 @@ public class TestMath {
         Assertions.assertFalse(region.isWithin(new Vec3i(0,9,4)));
 
         String unparsed = "0,10,0;10,0,-10";
-        Region parsed = Region.parse(unparsed);
+        CuboidRegion parsed = CuboidRegion.parse(unparsed);
 
         Assertions.assertNotNull(parsed);
         Assertions.assertEquals(new Vec3d(0,0,-10), parsed.getLowerBound());
@@ -373,7 +373,7 @@ public class TestMath {
         Assertions.assertEquals(new Vec3d(10,10,10), parsed.getExtent());
 
         ConfigSection unparsedSection = new ConfigSection().with("lower", "3,6,9").with("upper", "12,33,15");
-        SerializeResult<Region> result = Region.SERIALIZER.deserialize(ConfigContext.INSTANCE, unparsedSection);
+        SerializeResult<CuboidRegion> result = CuboidRegion.SERIALIZER.deserialize(ConfigContext.INSTANCE, unparsedSection);
 
         Assertions.assertTrue(result.isComplete());
         Assertions.assertEquals(new Vec3d(3,6,9), result.getOrThrow().getLowerBound());

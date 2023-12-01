@@ -1,130 +1,59 @@
 package org.wallentines.midnightlib.math;
 
 import org.jetbrains.annotations.Nullable;
-import org.wallentines.mdcfg.serializer.InlineSerializer;
-import org.wallentines.mdcfg.serializer.ObjectSerializer;
+import org.wallentines.mdcfg.serializer.SerializeContext;
+import org.wallentines.mdcfg.serializer.SerializeResult;
 import org.wallentines.mdcfg.serializer.Serializer;
 
-import java.util.Objects;
-
-/**
- * Represents a region in 3D space
- */
-public class Region {
-
-    private final Vec3d lower;
-    private final Vec3d upper;
-
-    /**
-     * Constructs a region bounded by two points
-     * @param point1 The first point
-     * @param point2 The second point
-     */
-    public Region(Vec3d point1, Vec3d point2) {
-        this.lower = new Vec3d(
-                Math.min(point1.getX(), point2.getX()),
-                Math.min(point1.getY(), point2.getY()),
-                Math.min(point1.getZ(), point2.getZ())
-            );
-        this.upper = new Vec3d(
-                Math.max(point1.getX(), point2.getX()),
-                Math.max(point1.getY(), point2.getY()),
-                Math.max(point1.getZ(), point2.getZ())
-        );
-    }
-
-    /**
-     * Gets the lower bound of the region
-     * @return The lower bound
-     */
-    public Vec3d getLowerBound() {
-        return lower;
-    }
-
-    /**
-     * Gets the upper bound of the region
-     * @return The upper bound
-     */
-    public Vec3d getUpperBound() {
-        return upper;
-    }
-
-    /**
-     * Gets the extent (size) of the region
-     * @return The extent of the region
-     */
-    public Vec3d getExtent() {
-        return upper.subtract(lower);
-    }
+public interface Region {
 
     /**
      * Determines whether a given point is within the region
      * @param vector The point to check
      * @return Whether the point is within the region
      */
-    public boolean isWithin(Vec3d vector) {
-
-        return vector.getX() >= lower.getX() && vector.getX() < upper.getX() &&
-               vector.getY() >= lower.getY() && vector.getY() < upper.getY() &&
-               vector.getZ() >= lower.getZ() && vector.getZ() < upper.getZ();
-
-    }
+    boolean isWithin(Vec3d vector);
 
     /**
      * Determines whether a given point is within the region
      * @param vector The point to check
      * @return Whether the point is within the region
      */
-    public boolean isWithin(Vec3i vector) {
-
+    default boolean isWithin(Vec3i vector) {
         return isWithin(new Vec3d(vector.getX(), vector.getY(), vector.getZ()));
     }
 
-    @Override
-    public String toString() {
-        return lower.toString() + ";" + upper.toString();
-    }
+    <T> SerializeResult<T> serialize(SerializeContext<T> context);
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Region region = (Region) o;
-        return Objects.equals(lower, region.lower) && Objects.equals(upper, region.upper);
-    }
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(lower, upper);
-    }
+    Serializer<Region> SERIALIZER = new Serializer<>() {
+        @Override
+        public <O> SerializeResult<O> serialize(SerializeContext<O> context, Region value) {
+            return value.serialize(context);
+        }
+
+        @Override
+        public <O> SerializeResult<Region> deserialize(SerializeContext<O> context, O value) {
+
+            return CuboidRegion.SERIALIZER.deserialize(context, value)
+                    .flatMap(cr -> (Region) cr)
+                    .mapError(() -> SphereRegion.SERIALIZER.deserialize(context, value)
+                            .flatMap(cr -> cr));
+        }
+    };
 
     /**
-     * Parses a region from the given string in the format "x0,y0,z0;x1,y1,z1"
+     * Parses a region from the given string in the format "X0,Y0,Z0;X1,Y1,Z1" or "X,Y,ZrR"
      * @param string The string to parse
      * @return A new region, or null if the string is not in the correct format
      */
     @Nullable
-    public static Region parse(String string) {
+    static Region parse(String string) {
 
-        String[] ss = string.split(";");
-
-        if(ss.length != 2) return null;
-
-        Vec3d lower = Vec3d.parse(ss[0]);
-        Vec3d extent = Vec3d.parse(ss[1]);
-
-        if(lower == null || extent == null) {
-            return null;
+        if(string.lastIndexOf('r') == -1) {
+            return CuboidRegion.parse(string);
         }
-
-        return new Region(lower, extent);
+        return SphereRegion.parse(string);
     }
-
-    public static final Serializer<Region> SERIALIZER = InlineSerializer.of(Objects::toString, Region::parse).or(
-            ObjectSerializer.create(
-                    Vec3d.SERIALIZER.entry("lower", Region::getLowerBound),
-                    Vec3d.SERIALIZER.entry("upper", Region::getUpperBound),
-                    Region::new
-            ));
 
 }
