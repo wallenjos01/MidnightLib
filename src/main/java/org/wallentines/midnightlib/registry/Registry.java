@@ -44,6 +44,10 @@ public class Registry<T> extends RegistryBase<Identifier, T> {
         return nameSerializer(Identifier.serializer(defaultNamespace));
     }
 
+    public T register(String id, T value) {
+        return register(new Identifier(defaultNamespace, id), value);
+    }
+
     /**
      * Creates an inline name serializer using the given Identifier serializer
      * @param idSerializer The identifier serializer to use in place of the default
