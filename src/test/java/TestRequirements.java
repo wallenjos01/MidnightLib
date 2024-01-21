@@ -1,25 +1,34 @@
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.wallentines.mdcfg.ConfigObject;
 import org.wallentines.mdcfg.ConfigPrimitive;
+import org.wallentines.mdcfg.serializer.SerializeContext;
+import org.wallentines.mdcfg.serializer.SerializeResult;
 import org.wallentines.midnightlib.requirement.MultiRequirement;
 import org.wallentines.midnightlib.requirement.Requirement;
-import org.wallentines.midnightlib.requirement.RequirementType;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 public class TestRequirements {
 
-    private static class MustEqual implements RequirementType<String> {
+    private static class MustEqual extends Requirement<String> {
+
+        private final String data;
+
+        public MustEqual(String value) {
+            super(null);
+            this.data = value;
+        }
 
         @Override
-        public boolean check(String data, ConfigObject config, Requirement<String> req) {
+        public boolean check(String data) {
+            return Objects.equals(data, this.data);
+        }
 
-            Assertions.assertNotNull(req);
-            Assertions.assertEquals(this, req.getType());
-
-            return data.equals(config.asString());
+        @Override
+        public <C> SerializeResult<C> serialize(SerializeContext<C> ctx) {
+            return null;
         }
     }
 
@@ -28,7 +37,7 @@ public class TestRequirements {
 
         List<Requirement<String>> lst = getRequirements();
 
-        MultiRequirement<String> req = new MultiRequirement<>(MultiRequirement.Operation.ANY, lst);
+        MultiRequirement<String> req = new MultiRequirement<>(MultiRequirement.Operation.ANY, null, lst);
 
         Assertions.assertEquals(6, req.getRequirements().size());
 
@@ -37,31 +46,31 @@ public class TestRequirements {
         Assertions.assertTrue(req.check("Hello3"));
         Assertions.assertFalse(req.check("World"));
 
-        req = new MultiRequirement<>(MultiRequirement.Operation.ALL, lst);
+        req = new MultiRequirement<>(MultiRequirement.Operation.ALL, null, lst);
         Assertions.assertFalse(req.check("Hello"));
         Assertions.assertFalse(req.check("Hello2"));
         Assertions.assertFalse(req.check("Hello3"));
         Assertions.assertFalse(req.check("World"));
 
-        req = new MultiRequirement<>(MultiRequirement.Operation.exactly(1), lst);
+        req = new MultiRequirement<>(MultiRequirement.Operation.exactly(1), null, lst);
         Assertions.assertFalse(req.check("Hello"));
         Assertions.assertTrue(req.check("Hello2"));
         Assertions.assertFalse(req.check("Hello3"));
         Assertions.assertFalse(req.check("World"));
 
-        req = new MultiRequirement<>(MultiRequirement.Operation.atLeast(1), lst);
+        req = new MultiRequirement<>(MultiRequirement.Operation.atLeast(1), null, lst);
         Assertions.assertTrue(req.check("Hello"));
         Assertions.assertTrue(req.check("Hello2"));
         Assertions.assertTrue(req.check("Hello3"));
         Assertions.assertFalse(req.check("World"));
 
-        req = new MultiRequirement<>(MultiRequirement.Operation.atMost(2), lst);
+        req = new MultiRequirement<>(MultiRequirement.Operation.atMost(2), null, lst);
         Assertions.assertTrue(req.check("Hello"));
         Assertions.assertTrue(req.check("Hello2"));
         Assertions.assertFalse(req.check("Hello3"));
         Assertions.assertTrue(req.check("World"));
 
-        req = new MultiRequirement<>(MultiRequirement.Operation.between(2,3), lst);
+        req = new MultiRequirement<>(MultiRequirement.Operation.between(2,3), null, lst);
         Assertions.assertTrue(req.check("Hello"));
         Assertions.assertFalse(req.check("Hello2"));
         Assertions.assertTrue(req.check("Hello3"));
@@ -69,15 +78,14 @@ public class TestRequirements {
     }
 
     private static List<Requirement<String>> getRequirements() {
-        MustEqual mst = new MustEqual();
 
         return Arrays.asList(
-                new Requirement<>(mst, new ConfigPrimitive("Hello")),
-                new Requirement<>(mst, new ConfigPrimitive("Hello2")),
-                new Requirement<>(mst, new ConfigPrimitive("Hello")),
-                new Requirement<>(mst, new ConfigPrimitive("Hello3")),
-                new Requirement<>(mst, new ConfigPrimitive("Hello3")),
-                new Requirement<>(mst, new ConfigPrimitive("Hello3")));
+                new MustEqual("Hello"),
+                new MustEqual("Hello2"),
+                new MustEqual("Hello"),
+                new MustEqual("Hello3"),
+                new MustEqual("Hello3"),
+                new MustEqual("Hello3"));
     }
 
 }

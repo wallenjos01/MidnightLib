@@ -1,6 +1,5 @@
 package org.wallentines.midnightlib.requirement;
 
-
 import org.wallentines.mdcfg.serializer.ObjectSerializer;
 import org.wallentines.mdcfg.serializer.SerializeContext;
 import org.wallentines.mdcfg.serializer.SerializeResult;
@@ -16,6 +15,7 @@ import java.util.*;
 public class MultiRequirement<T> extends Requirement<T> {
 
     private final Operation op;
+    private final RegistryBase<?, RequirementType<T>> registry;
     private final List<Requirement<T>> requirements;
 
     /**
@@ -23,9 +23,10 @@ public class MultiRequirement<T> extends Requirement<T> {
      * @param op The operation
      * @param requirements The number of sub-requirements
      */
-    public MultiRequirement(Operation op, Collection<Requirement<T>> requirements) {
-        super(null, null);
+    public MultiRequirement(Operation op, RegistryBase<?, RequirementType<T>> registry, Collection<Requirement<T>> requirements) {
+        super(null);
         this.op = op;
+        this.registry = registry;
         this.requirements = new ArrayList<>(requirements);
     }
 
@@ -42,28 +43,41 @@ public class MultiRequirement<T> extends Requirement<T> {
         return op.check(completed, requirements.size());
     }
 
+    @Override
+    public <C> SerializeResult<C> serialize(SerializeContext<C> ctx) {
+
+        Map<String, C> out = new HashMap<>();
+
+        SerializeResult<C> opc = Operation.SERIALIZER.serialize(ctx, op);
+        if(!opc.isComplete()) {
+            return SerializeResult.failure("Failed to serialize operator! " + opc.getError());
+        }
+
+        out.put("operation", opc.getOrThrow());
+
+        List<C> entries = new ArrayList<>();
+        for(Requirement<T> req : requirements) {
+            SerializeResult<C> reqc = Requirement.serializer(registry).serialize(ctx, req);
+            if(!reqc.isComplete()) {
+                return SerializeResult.failure("Failed to serialize a requirement! " + reqc.getError());
+            }
+            entries.add(reqc.getOrThrow());
+        }
+
+        out.put("entries", ctx.toList(entries));
+        return SerializeResult.success(ctx.toMap(out));
+    }
+
+    public Operation getOperation() {
+        return op;
+    }
+
     /**
      * Gets the list of sub-requirements
      * @return A list of requirements
      */
     public List<Requirement<T>> getRequirements() {
         return requirements;
-    }
-
-    /**
-     * Creates a serializer which can only serialize MultiRequirement requirements
-     * @param registry The registry to find requirement types in
-     * @return A new serializer
-     * @param <T> The type of data to check in requirements
-     */
-    public static <T> Serializer<MultiRequirement<T>> multiSerializer(RegistryBase<?, RequirementType<T>> registry) {
-
-        return ObjectSerializer.create(
-                Operation.SERIALIZER.entry("operation", req -> req.op),
-                Requirement.serializer(registry).listOf().entry("values", req -> req.requirements),
-                MultiRequirement::new
-        );
-
     }
 
     @Override
@@ -78,6 +92,20 @@ public class MultiRequirement<T> extends Requirement<T> {
     public int hashCode() {
         return Objects.hash(op, requirements);
     }
+
+    /**
+     * Creates a serializer which can only serialize MultiRequirement requirements
+     * @param registry The registry to find requirement types in
+     * @return A new serializer
+     * @param <T> The type of data to check in requirements
+     */
+    public static <T> Serializer<MultiRequirement<T>> multiSerializer(RegistryBase<?, RequirementType<T>> registry) {
+        return ObjectSerializer.create(
+                Operation.SERIALIZER.entry("operation", MultiRequirement<T>::getOperation),
+                Requirement.serializer(registry).listOf().entry("entries", MultiRequirement<T>::getRequirements),
+                (op, ent) -> new MultiRequirement<>(op, registry, ent)
+        );
+    };
 
     /**
      * A class which defines an operation to determine how many requirements are needed to complete a multi-requirement

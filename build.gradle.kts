@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "org.wallentines"
-version = "1.4.0-SNAPSHOT"
+version = "1.5.0-SNAPSHOT"
 
 java {
     toolchain.languageVersion.set(JavaLanguageVersion.of(17))
