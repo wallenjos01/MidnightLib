@@ -1,0 +1,10 @@
+[
+  {
+    "lines": [
+      "all"
+    ],
+    "type": "replace",
+    "find": "return new RequirementType<>()",
+    "replace": "return new RequirementType<T>()"
+  }
+]

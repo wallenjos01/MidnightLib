@@ -1,0 +1,42 @@
+[
+  {
+    "lines": [
+      "all"
+    ],
+    "type": "replace",
+    "find": "return new RequirementType<>()",
+    "replace": "return new RequirementType<T>()"
+  },
+  {
+    "lines": [
+      "all"
+    ],
+    "type": "replace",
+    "find": ".toList()",
+    "replace": ".collect(java.util.stream.Collectors.toList())"
+  },
+  {
+    "lines": [
+      "all"
+    ],
+    "type": "replace",
+    "find": "List.of(",
+    "replace": "Arrays.asList("
+  },
+  {
+    "lines": [
+      "all"
+    ],
+    "type": "replace",
+    "find": "Set.of(value)",
+    "replace": "new java.util.HashSet<String>(Arrays.asList(value))"
+  },
+  {
+    "lines": [
+      "all"
+    ],
+    "type": "replace",
+    "find": "Set.copyOf(",
+    "replace": "new java.util.HashSet<String>("
+  }
+]
