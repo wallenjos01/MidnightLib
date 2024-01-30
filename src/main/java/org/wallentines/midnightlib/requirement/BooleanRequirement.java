@@ -13,11 +13,11 @@ public class BooleanRequirement<T> extends Requirement<T> {
         return type(getter, BooleanRequirement::new);
     }
 
-    public static <T> RequirementType<T> type(Function<T, Boolean> getter, Functions.F3<RequirementType<T>, Function<T, Boolean>, Boolean, Requirement<T>> builder) {
+    public static <T> RequirementType<T> type(Function<T, Boolean> getter, Functions.F4<RequirementType<T>, Boolean, Function<T, Boolean>, Boolean, Requirement<T>> builder) {
         return new RequirementType<>() {
             @Override
-            public <C> SerializeResult<Requirement<T>> create(SerializeContext<C> ctx, C value) {
-                return SerializeResult.ofNullable(ctx.asBoolean(value), "Expected a Boolean!").flatMap(b -> builder.apply(this, getter, b));
+            public <C> SerializeResult<Requirement<T>> create(SerializeContext<C> ctx, C value, boolean invert) {
+                return SerializeResult.ofNullable(ctx.asBoolean(value), "Expected a Boolean!").flatMap(b -> builder.apply(this, invert, getter, b));
             }
         };
     }
@@ -25,14 +25,14 @@ public class BooleanRequirement<T> extends Requirement<T> {
     private final Function<T, Boolean> getter;
     private final Boolean value;
 
-    public BooleanRequirement(RequirementType<T> type, Function<T, Boolean> getter, Boolean value) {
-        super(type);
+    public BooleanRequirement(RequirementType<T> type, boolean invert, Function<T, Boolean> getter, Boolean value) {
+        super(type, invert);
         this.getter = getter;
         this.value = value;
     }
 
     @Override
-    public boolean check(T data) {
+    protected boolean doCheck(T data) {
         return Objects.equals(getter.apply(data), value);
     }
 

@@ -21,17 +21,28 @@ public class MultiRequirement<T> extends Requirement<T> {
     /**
      * Constructs a new multi requirement with the given operation and collection of sub-requirements
      * @param op The operation
+     * @param invert Whether the result should be inverted
      * @param requirements The number of sub-requirements
      */
-    public MultiRequirement(Operation op, RegistryBase<?, RequirementType<T>> registry, Collection<Requirement<T>> requirements) {
-        super(null);
+    public MultiRequirement(Operation op, boolean invert, RegistryBase<?, RequirementType<T>> registry, Collection<Requirement<T>> requirements) {
+        super(null, invert);
         this.op = op;
         this.registry = registry;
         this.requirements = new ArrayList<>(requirements);
     }
 
+    /**
+     * Constructs a new multi requirement with the given operation and collection of sub-requirements
+     * @param op The operation
+     * @param requirements The number of sub-requirements
+     */
+    public MultiRequirement(Operation op, RegistryBase<?, RequirementType<T>> registry, Collection<Requirement<T>> requirements) {
+        this(op, false, registry, requirements);
+    }
+
+
     @Override
-    public boolean check(T context) {
+    protected boolean doCheck(T context) {
 
         int completed = 0;
         for(Requirement<T> req : requirements) {
@@ -93,6 +104,8 @@ public class MultiRequirement<T> extends Requirement<T> {
         return Objects.hash(op, requirements);
     }
 
+
+
     /**
      * Creates a serializer which can only serialize MultiRequirement requirements
      * @param registry The registry to find requirement types in
@@ -102,8 +115,9 @@ public class MultiRequirement<T> extends Requirement<T> {
     public static <T> Serializer<MultiRequirement<T>> multiSerializer(RegistryBase<?, RequirementType<T>> registry) {
         return ObjectSerializer.create(
                 Operation.SERIALIZER.entry("operation", MultiRequirement<T>::getOperation),
+                Serializer.BOOLEAN.entry("invert", MultiRequirement<T>::isInverted),
                 Requirement.serializer(registry).listOf().entry("entries", MultiRequirement<T>::getRequirements),
-                (op, ent) -> new MultiRequirement<>(op, registry, ent)
+                (op, invert, ent) -> new MultiRequirement<>(op, invert, registry, ent)
         );
     };
 

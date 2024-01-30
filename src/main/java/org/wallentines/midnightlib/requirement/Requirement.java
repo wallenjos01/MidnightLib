@@ -12,13 +12,15 @@ import java.util.HashMap;
 public abstract class Requirement<T> {
 
     private final RequirementType<T> type;
+    private final boolean invert;
 
     /**
      * Constructs a new Requirement instance with the given type and config
      * @param type The type of requirement
      */
-    protected Requirement(RequirementType<T> type) {
+    protected Requirement(RequirementType<T> type, boolean invert) {
         this.type = type;
+        this.invert = invert;
     }
 
     /**
@@ -26,8 +28,15 @@ public abstract class Requirement<T> {
      * @param data The object to check
      * @return Whether the object satisfies the requirement
      */
-    public abstract boolean check(T data);
+    protected abstract boolean doCheck(T data);
 
+    public final boolean check(T data) {
+        return invert ^ doCheck(data);
+    }
+
+    public boolean isInverted() {
+        return invert;
+    }
 
     public abstract <C> SerializeResult<C> serialize(SerializeContext<C> ctx);
 
@@ -69,12 +78,15 @@ public abstract class Requirement<T> {
                     return SerializeResult.failure("Key type was missing!");
                 }
 
+                Boolean invert = context.asBoolean(context.get("invert", value));
+                if(invert == null) invert = false;
+
                 RequirementType<T> req = registry.nameSerializer().readString(str);
                 if (req == null) {
                     return SerializeResult.failure("Unable to find requirement type " + str + "!");
                 }
 
-                return req.create(context, context.get("value", value));
+                return req.create(context, context.get("value", value), invert);
             }
         };
     }

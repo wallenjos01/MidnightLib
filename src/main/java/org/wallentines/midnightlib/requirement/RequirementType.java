@@ -5,6 +5,6 @@ import org.wallentines.mdcfg.serializer.SerializeResult;
 
 public interface RequirementType<T> {
 
-    <C> SerializeResult<Requirement<T>> create(SerializeContext<C> ctx, C value);
+    <C> SerializeResult<Requirement<T>> create(SerializeContext<C> ctx, C value, boolean invert);
 
 }

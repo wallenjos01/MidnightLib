@@ -17,12 +17,12 @@ public class TestRequirements {
         private final String data;
 
         public MustEqual(String value) {
-            super(null);
+            super(null, false);
             this.data = value;
         }
 
         @Override
-        public boolean check(String data) {
+        protected boolean doCheck(String data) {
             return Objects.equals(data, this.data);
         }
 
@@ -64,7 +64,7 @@ public class TestRequirements {
         Assertions.assertTrue(req.check("Hello3"));
         Assertions.assertFalse(req.check("World"));
 
-        req = new MultiRequirement<>(MultiRequirement.Operation.atMost(2), null, lst);
+        req = new MultiRequirement<>(MultiRequirement.Operation.atMost(2),  null, lst);
         Assertions.assertTrue(req.check("Hello"));
         Assertions.assertTrue(req.check("Hello2"));
         Assertions.assertFalse(req.check("Hello3"));

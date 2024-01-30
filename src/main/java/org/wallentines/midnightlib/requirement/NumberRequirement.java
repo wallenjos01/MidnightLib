@@ -15,12 +15,12 @@ public class NumberRequirement<T> extends Requirement<T> {
         return type(getter, NumberRequirement::new);
     }
 
-    public static <T> RequirementType<T> type(Function<T, Number> getter, Functions.F4<RequirementType<T>, Function<T, Number>, Operation, Number, Requirement<T>> builder) {
+    public static <T> RequirementType<T> type(Function<T, Number> getter, Functions.F5<RequirementType<T>, Boolean, Function<T, Number>, Operation, Number, Requirement<T>> builder) {
         return new RequirementType<>() {
             @Override
-            public <C> SerializeResult<Requirement<T>> create(SerializeContext<C> ctx, C value) {
+            public <C> SerializeResult<Requirement<T>> create(SerializeContext<C> ctx, C value, boolean invert) {
 
-                return SerializeResult.ofNullable(ctx.asNumber(value)).flatMap(n -> builder.apply(this, getter, Operation.EQUAL, n)).mapError(() ->
+                return SerializeResult.ofNullable(ctx.asNumber(value)).flatMap(n -> builder.apply(this, invert, getter, Operation.EQUAL, n)).mapError(() ->
                     SerializeResult.ofNullable(ctx.asString(value), "Expected a String or Number!").map(str -> {
 
                         int firstDigit = -1;
@@ -48,7 +48,7 @@ public class NumberRequirement<T> extends Requirement<T> {
                         if(firstDigit > 0) {
                             op = Operation.SERIALIZER.readString(str.substring(0, firstDigit));
                         }
-                        return SerializeResult.success(builder.apply(this, getter, op, num));
+                        return SerializeResult.success(builder.apply(this, invert, getter, op, num));
                     })
                 );
             }
@@ -59,15 +59,15 @@ public class NumberRequirement<T> extends Requirement<T> {
     private final Operation operation;
     private final Number value;
 
-    public NumberRequirement(RequirementType<T> type, Function<T, Number> getter, Operation op, Number value) {
-        super(type);
+    public NumberRequirement(RequirementType<T> type, boolean invert, Function<T, Number> getter, Operation op, Number value) {
+        super(type, invert);
         this.getter = getter;
         this.operation = op;
         this.value = value;
     }
 
     @Override
-    public boolean check(T data) {
+    protected boolean doCheck(T data) {
 
         Number n = getter.apply(data);
         boolean integer = ConfigPrimitive.isInteger(value) && ConfigPrimitive.isInteger(n);
