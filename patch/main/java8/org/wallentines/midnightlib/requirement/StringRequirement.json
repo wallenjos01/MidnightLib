@@ -20,8 +20,8 @@
       "all"
     ],
     "type": "replace",
-    "find": "List.of(",
-    "replace": "Arrays.asList("
+    "find": "List::of",
+    "replace": "java.util.Arrays::asList"
   },
   {
     "lines": [
@@ -29,7 +29,7 @@
     ],
     "type": "replace",
     "find": "Set.of(value)",
-    "replace": "new java.util.HashSet<String>(Arrays.asList(value))"
+    "replace": "new java.util.HashSet<String>(java.util.Arrays.asList(value))"
   },
   {
     "lines": [

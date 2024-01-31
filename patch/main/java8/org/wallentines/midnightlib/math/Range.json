@@ -1,0 +1,10 @@
+[
+  {
+    "lines": [
+      "all"
+    ],
+    "type": "replace",
+    "find": "Set.copyOf(",
+    "replace": "new java.util.HashSet<T>("
+  }
+]

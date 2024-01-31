@@ -1,12 +1,13 @@
 package org.wallentines.midnightlib.requirement;
 
-import org.wallentines.mdcfg.serializer.ObjectSerializer;
 import org.wallentines.mdcfg.serializer.SerializeContext;
 import org.wallentines.mdcfg.serializer.SerializeResult;
 import org.wallentines.mdcfg.serializer.Serializer;
+import org.wallentines.midnightlib.math.Range;
 import org.wallentines.midnightlib.registry.RegistryBase;
 
 import java.util.*;
+import java.util.function.Predicate;
 
 /**
  * A requirement which contains one or more sub-requirements and an operation to determine how many need to be completed
@@ -14,8 +15,8 @@ import java.util.*;
  */
 public class MultiRequirement<T> extends Requirement<T> {
 
-    private final Operation op;
-    private final RegistryBase<?, RequirementType<T>> registry;
+    private final Range<Integer> op;
+    private final RegistryBase<?, Serializer<Predicate<T>>> registry;
     private final List<Requirement<T>> requirements;
 
     /**
@@ -24,7 +25,7 @@ public class MultiRequirement<T> extends Requirement<T> {
      * @param invert Whether the result should be inverted
      * @param requirements The number of sub-requirements
      */
-    public MultiRequirement(Operation op, boolean invert, RegistryBase<?, RequirementType<T>> registry, Collection<Requirement<T>> requirements) {
+    public MultiRequirement(Range<Integer> op, boolean invert, RegistryBase<?, Serializer<Predicate<T>>> registry, Collection<Requirement<T>> requirements) {
         super(null, invert);
         this.op = op;
         this.registry = registry;
@@ -36,13 +37,13 @@ public class MultiRequirement<T> extends Requirement<T> {
      * @param op The operation
      * @param requirements The number of sub-requirements
      */
-    public MultiRequirement(Operation op, RegistryBase<?, RequirementType<T>> registry, Collection<Requirement<T>> requirements) {
+    public MultiRequirement(Range<Integer> op, RegistryBase<?, Serializer<Predicate<T>>> registry, Collection<Requirement<T>> requirements) {
         this(op, false, registry, requirements);
     }
 
 
     @Override
-    protected boolean doCheck(T context) {
+    public boolean check(T context) {
 
         int completed = 0;
         for(Requirement<T> req : requirements) {
@@ -51,7 +52,8 @@ public class MultiRequirement<T> extends Requirement<T> {
             }
         }
 
-        return op.check(completed, requirements.size());
+        boolean result = op instanceof Range.All ? completed == requirements.size() : op.isWithin(completed);
+        return isInverted() ^ result;
     }
 
     @Override
@@ -59,12 +61,15 @@ public class MultiRequirement<T> extends Requirement<T> {
 
         Map<String, C> out = new HashMap<>();
 
-        SerializeResult<C> opc = Operation.SERIALIZER.serialize(ctx, op);
-        if(!opc.isComplete()) {
-            return SerializeResult.failure("Failed to serialize operator! " + opc.getError());
+        if(op instanceof Range.Exact && op.isWithin(requirements.size())) {
+            out.put("count", ctx.toString("all"));
+        } else {
+            SerializeResult<C> res = Range.INTEGER.serialize(ctx, op);
+            if(!res.isComplete()) {
+                return SerializeResult.failure("Failed to serialize a requirement! " + res.getError());
+            }
+            out.put("count", res.getOrThrow());
         }
-
-        out.put("operation", opc.getOrThrow());
 
         List<C> entries = new ArrayList<>();
         for(Requirement<T> req : requirements) {
@@ -75,12 +80,12 @@ public class MultiRequirement<T> extends Requirement<T> {
             entries.add(reqc.getOrThrow());
         }
 
+        if(isInverted()) {
+            out.put("inverted", ctx.toBoolean(true));
+        }
+
         out.put("entries", ctx.toList(entries));
         return SerializeResult.success(ctx.toMap(out));
-    }
-
-    public Operation getOperation() {
-        return op;
     }
 
     /**
@@ -112,13 +117,28 @@ public class MultiRequirement<T> extends Requirement<T> {
      * @return A new serializer
      * @param <T> The type of data to check in requirements
      */
-    public static <T> Serializer<MultiRequirement<T>> multiSerializer(RegistryBase<?, RequirementType<T>> registry) {
-        return ObjectSerializer.create(
-                Operation.SERIALIZER.entry("operation", MultiRequirement<T>::getOperation),
-                Serializer.BOOLEAN.entry("invert", MultiRequirement<T>::isInverted),
-                Requirement.serializer(registry).listOf().entry("entries", MultiRequirement<T>::getRequirements),
-                (op, invert, ent) -> new MultiRequirement<>(op, invert, registry, ent)
-        );
+    public static <T> Serializer<MultiRequirement<T>> multiSerializer(RegistryBase<?, Serializer<Predicate<T>>> registry) {
+        return new Serializer<MultiRequirement<T>>() {
+            @Override
+            public <O> SerializeResult<O> serialize(SerializeContext<O> ctx, MultiRequirement<T> req) {
+                return req.serialize(ctx);
+            }
+
+            @Override
+            public <O> SerializeResult<MultiRequirement<T>> deserialize(SerializeContext<O> ctx, O o) {
+
+                return Requirement.serializer(registry).listOf().deserialize(ctx, ctx.get("entries", o)).map(entries -> {
+                    SerializeResult<Range<Integer>> res = Range.INTEGER.deserialize(ctx, ctx.get("count", o));
+                    if(!res.isComplete()) {
+                        return SerializeResult.failure("Unable to parse range! " + res.getError());
+                    }
+                    Range<Integer> count = res.getOrThrow();
+                    Boolean invertNullable = ctx.asBoolean(ctx.get("invert", o));
+                    boolean invert = invertNullable != null && invertNullable;
+                    return SerializeResult.success(new MultiRequirement<>(count, invert, registry, entries));
+                });
+            }
+        };
     };
 
     /**

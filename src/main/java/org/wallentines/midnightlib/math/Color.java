@@ -1,7 +1,9 @@
 package org.wallentines.midnightlib.math;
 
 import org.jetbrains.annotations.Nullable;
-import org.wallentines.mdcfg.serializer.*;
+import org.wallentines.mdcfg.serializer.SerializeContext;
+import org.wallentines.mdcfg.serializer.SerializeResult;
+import org.wallentines.mdcfg.serializer.Serializer;
 
 import java.util.Objects;
 

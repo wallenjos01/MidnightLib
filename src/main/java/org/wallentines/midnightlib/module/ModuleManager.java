@@ -1,6 +1,8 @@
 package org.wallentines.midnightlib.module;
 
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.wallentines.mdcfg.ConfigPrimitive;
 import org.wallentines.mdcfg.ConfigSection;
 import org.wallentines.mdcfg.serializer.ConfigContext;
@@ -9,9 +11,6 @@ import org.wallentines.midnightlib.event.Event;
 import org.wallentines.midnightlib.event.HandlerList;
 import org.wallentines.midnightlib.registry.Identifier;
 import org.wallentines.midnightlib.registry.Registry;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.wallentines.midnightlib.registry.RegistryBase;
 
 import java.util.*;

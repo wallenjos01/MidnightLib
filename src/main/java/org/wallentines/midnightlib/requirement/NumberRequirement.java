@@ -1,117 +1,45 @@
 package org.wallentines.midnightlib.requirement;
 
-import org.wallentines.mdcfg.ConfigPrimitive;
-import org.wallentines.mdcfg.Functions;
-import org.wallentines.mdcfg.serializer.InlineSerializer;
-import org.wallentines.mdcfg.serializer.SerializeContext;
-import org.wallentines.mdcfg.serializer.SerializeResult;
+import org.wallentines.mdcfg.serializer.Serializer;
+import org.wallentines.midnightlib.math.Range;
 
-import java.util.Objects;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
-public class NumberRequirement<T> extends Requirement<T> {
+public class NumberRequirement<T, N extends Comparable<N>> implements Predicate<T> {
 
-    public static <T> RequirementType<T> type(Function<T, Number> getter) {
-        return type(getter, NumberRequirement::new);
+    public static <T> Serializer<NumberRequirement<T, Integer>> forInt(Function<T, Integer> getter) {
+        return serializer(getter, Range.INTEGER);
     }
 
-    public static <T> RequirementType<T> type(Function<T, Number> getter, Functions.F5<RequirementType<T>, Boolean, Function<T, Number>, Operation, Number, Requirement<T>> builder) {
-        return new RequirementType<>() {
-            @Override
-            public <C> SerializeResult<Requirement<T>> create(SerializeContext<C> ctx, C value, boolean invert) {
-
-                return SerializeResult.ofNullable(ctx.asNumber(value)).flatMap(n -> builder.apply(this, invert, getter, Operation.EQUAL, n)).mapError(() ->
-                    SerializeResult.ofNullable(ctx.asString(value), "Expected a String or Number!").map(str -> {
-
-                        int firstDigit = -1;
-                        for(int i = 0 ; i < str.length() ; i++) {
-                            char c = str.charAt(i);
-                            if(c >= '0' && c <= '9' || c == '.') {
-                                firstDigit = i;
-                            }
-                        }
-                        if(firstDigit == -1) return SerializeResult.failure("No number could be parsed!");
-
-                        Number num;
-                        try {
-                            String numStr = str.substring(firstDigit);
-                            if(numStr.contains(".")) {
-                                num = Double.parseDouble(numStr);
-                            } else {
-                                num = Long.parseLong(numStr);
-                            }
-                        } catch (NumberFormatException ex) {
-                            return SerializeResult.failure("An error occurred while parsing a number! " + ex.getMessage());
-                        }
-
-                        Operation op = Operation.EQUAL;
-                        if(firstDigit > 0) {
-                            op = Operation.SERIALIZER.readString(str.substring(0, firstDigit));
-                        }
-                        return SerializeResult.success(builder.apply(this, invert, getter, op, num));
-                    })
-                );
-            }
-        };
+    public static <T> Serializer<NumberRequirement<T, Long>> forLong(Function<T, Long> getter) {
+        return serializer(getter, Range.LONG);
     }
 
-    private final Function<T, Number> getter;
-    private final Operation operation;
-    private final Number value;
+    public static <T> Serializer<NumberRequirement<T, Double>> forDouble(Function<T, Double> getter) {
+        return serializer(getter, Range.DOUBLE);
+    }
 
-    public NumberRequirement(RequirementType<T> type, boolean invert, Function<T, Number> getter, Operation op, Number value) {
-        super(type, invert);
+    public static <T, N extends Comparable<N>> Serializer<NumberRequirement<T, N>> serializer(Function<T, N> getter, Serializer<Range<N>> serializer) {
+
+        return serializer.map(NumberRequirement::getRange, range -> new NumberRequirement<>(getter, range));
+    }
+
+    private final Function<T, N> getter;
+    private final Range<N> range;
+
+    public NumberRequirement(Function<T, N> getter, Range<N> range) {
         this.getter = getter;
-        this.operation = op;
-        this.value = value;
+        this.range = range;
+    }
+
+    public Range<N> getRange() {
+        return range;
     }
 
     @Override
-    protected boolean doCheck(T data) {
-
-        Number n = getter.apply(data);
-        boolean integer = ConfigPrimitive.isInteger(value) && ConfigPrimitive.isInteger(n);
-        switch (operation) {
-            case GREATER:
-                return integer ? n.longValue() > value.longValue() : n.doubleValue() > value.doubleValue();
-            case LESS:
-                return integer ? n.longValue() < value.longValue() : n.doubleValue() < value.doubleValue();
-            case GREATER_EQUAL:
-                return integer ? n.longValue() >= value.longValue() : n.doubleValue() >= value.doubleValue();
-            case LESS_EQUAL:
-                return integer ? n.longValue() <= value.longValue() : n.doubleValue() <= value.doubleValue();
-            case EQUAL:
-                return n.equals(value);
-        }
-
-        return false;
+    public boolean test(T t) {
+        return range.isWithin(getter.apply(t));
     }
 
-    @Override
-    public <C> SerializeResult<C> serialize(SerializeContext<C> ctx) {
-        return SerializeResult.success(ctx.toNumber(value));
-    }
-
-    public enum Operation {
-        GREATER(">"),
-        LESS("<"),
-        GREATER_EQUAL(">="),
-        LESS_EQUAL("<="),
-        EQUAL("=");
-
-        private final String value;
-
-        Operation(String value) {
-            this.value = value;
-        }
-
-        public static final InlineSerializer<Operation> SERIALIZER = InlineSerializer.of(op -> op.value, value -> {
-            for(Operation o : values()) {
-                if(o.value.equals(value)) {
-                    return o;
-                }
-            }
-            return null;
-        });
-    }
 }
