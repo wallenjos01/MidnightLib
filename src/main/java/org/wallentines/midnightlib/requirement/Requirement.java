@@ -16,9 +16,9 @@ import java.util.function.Predicate;
  */
 public class Requirement<T, P extends Predicate<T>> {
 
-    private final Serializer<P> serializer;
-    private final P check;
-    final boolean invert;
+    protected final Serializer<P> serializer;
+    protected final P check;
+    protected final boolean invert;
 
     /**
      * Constructs a non-serializable Requirement instance with the given type and config
