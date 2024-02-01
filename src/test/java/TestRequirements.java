@@ -29,9 +29,9 @@ public class TestRequirements {
     @Test
     public void testMultiRequirement() {
 
-        List<Requirement<String>> lst = getRequirements();
+        List<Requirement<String, Predicate<String>>> lst = getRequirements();
 
-        MultiRequirement<String> req = new MultiRequirement<>(Range.atLeast(1), null, lst);
+        MultiRequirement<String, Predicate<String>> req = new MultiRequirement<>(Range.atLeast(1), null, lst);
 
         Assertions.assertEquals(6, req.getRequirements().size());
 
@@ -71,7 +71,7 @@ public class TestRequirements {
         Assertions.assertFalse(req.check("World"));
     }
 
-    private static List<Requirement<String>> getRequirements() {
+    private static List<Requirement<String, Predicate<String>>> getRequirements() {
 
        return Arrays.asList(
                new Requirement<>(new MustEqual("Hello")),

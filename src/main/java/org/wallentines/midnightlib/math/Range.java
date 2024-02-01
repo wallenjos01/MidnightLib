@@ -375,6 +375,7 @@ public interface Range<T extends Comparable<T>> {
                 return SerializeResult.failure("Don't know how to serialize " + range);
             }
 
+            @SuppressWarnings("unchecked")
             @Override
             public <O> SerializeResult<Range<T>> deserialize(SerializeContext<O> ctx, O o) {
                 return Range.Exact.serializer(converter, backConverter, parser).deserialize(ctx, o).flatMap(ex -> (Range<T>) ex)

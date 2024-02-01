@@ -12,15 +12,19 @@ public class StringRequirement<T> implements Predicate<T> {
 
     public static <T> Serializer<StringRequirement<T>> serializer(Function<T, String> getter) {
 
-        return Serializer.STRING.listOf()
-                .or(Serializer.STRING
-                        .map(col -> col.iterator().next(), List::of)
-                )
-                .map(ser -> ser.values, val -> new StringRequirement<>(getter, val));
+        return serializer(req -> req.values, values -> new StringRequirement<>(getter, values));
     }
 
-    private final Function<T, String> getter;
-    private final Set<String> values;
+    public static <S> Serializer<S> serializer(Function<S, Collection<String>> backGetter, Function<Collection<String>, S> constructor) {
+
+        return STRING_SERIALIZER.map(backGetter, constructor);
+    }
+
+    public static final Serializer<Collection<String>> STRING_SERIALIZER = Serializer.STRING.listOf().or(Serializer.STRING.map(col -> col.iterator().next(), List::of));
+
+
+    protected final Function<T, String> getter;
+    protected final Set<String> values;
 
     public StringRequirement(Function<T, String> getter, String value) {
         this.getter = getter;

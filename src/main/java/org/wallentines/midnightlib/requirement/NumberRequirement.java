@@ -3,6 +3,7 @@ package org.wallentines.midnightlib.requirement;
 import org.wallentines.mdcfg.serializer.Serializer;
 import org.wallentines.midnightlib.math.Range;
 
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -22,7 +23,12 @@ public class NumberRequirement<T, N extends Comparable<N>> implements Predicate<
 
     public static <T, N extends Comparable<N>> Serializer<NumberRequirement<T, N>> serializer(Function<T, N> getter, Serializer<Range<N>> serializer) {
 
-        return serializer.map(NumberRequirement::getRange, range -> new NumberRequirement<>(getter, range));
+        return serializer(serializer, NumberRequirement::getRange, range -> new NumberRequirement<>(getter, range));
+    }
+
+    public static <T, N extends Comparable<N>, R> Serializer<R> serializer(Serializer<Range<N>> serializer, Function<R, Range<N>> backGetter, Function<Range<N>, R> constructor) {
+
+        return serializer.map(backGetter, constructor);
     }
 
     private final Function<T, N> getter;

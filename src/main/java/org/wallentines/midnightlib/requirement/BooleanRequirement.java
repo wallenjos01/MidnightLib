@@ -9,7 +9,11 @@ import java.util.function.Predicate;
 public class BooleanRequirement<T> implements Predicate<T> {
 
     public static <T> Serializer<BooleanRequirement<T>> serializer(Function<T, Boolean> getter) {
-        return Serializer.BOOLEAN.map(ser -> ser.value, val -> new BooleanRequirement<>(getter, val));
+        return serializer(req -> req.value, value -> new BooleanRequirement<>(getter, value));
+    }
+
+    public static <T, R> Serializer<R> serializer(Function<R,Boolean> backGetter, Function<Boolean, R> constructor) {
+        return Serializer.BOOLEAN.map(backGetter, constructor);
     }
 
     private final Function<T, Boolean> getter;
