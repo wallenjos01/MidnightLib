@@ -13,6 +13,7 @@ import java.util.function.Predicate;
  * A requirement which contains one or more sub-requirements and an operation to determine how many need to be completed
  * @param <T> The type of object which the requirement applies to
  */
+@Deprecated
 public class MultiRequirement<T, P extends Predicate<T>> extends Requirement<T, P> {
 
     private final Range<Integer> op;

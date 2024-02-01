@@ -6,20 +6,20 @@ import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-public class BooleanRequirement<T> implements Predicate<T> {
+public class BooleanCheck<T> implements Predicate<T> {
 
-    public static <T> Serializer<BooleanRequirement<T>> serializer(Function<T, Boolean> getter) {
-        return serializer(req -> req.value, value -> new BooleanRequirement<>(getter, value));
+    public static <T> Serializer<BooleanCheck<T>> serializer(Function<T, Boolean> getter) {
+        return serializer(req -> req.value, value -> new BooleanCheck<>(getter, value));
     }
 
     public static <T, R> Serializer<R> serializer(Function<R,Boolean> backGetter, Function<Boolean, R> constructor) {
-        return Serializer.BOOLEAN.map(backGetter, constructor);
+        return Serializer.BOOLEAN.fieldOf("value").map(backGetter, constructor);
     }
 
     private final Function<T, Boolean> getter;
     private final Boolean value;
 
-    public BooleanRequirement(Function<T, Boolean> getter, Boolean value) {
+    public BooleanCheck(Function<T, Boolean> getter, Boolean value) {
         this.getter = getter;
         this.value = value;
     }

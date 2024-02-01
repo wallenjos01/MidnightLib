@@ -5,8 +5,11 @@ import org.wallentines.mdcfg.Functions;
 import org.wallentines.mdcfg.serializer.SerializeContext;
 import org.wallentines.mdcfg.serializer.SerializeResult;
 import org.wallentines.mdcfg.serializer.Serializer;
+import org.wallentines.midnightlib.math.Range;
+import org.wallentines.midnightlib.registry.Registry;
 import org.wallentines.midnightlib.registry.RegistryBase;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.function.Predicate;
 
@@ -82,9 +85,16 @@ public class Requirement<T, P extends Predicate<T>> {
         return serializer;
     }
 
+    public static <T> Requirement<T, Predicate<T>> simple(Predicate<T> pred) {
+        return new Requirement<>(pred);
+    }
+
+    public static <T> Requirement<T, Predicate<T>> composite(Range<Integer> range, Collection<Requirement<T, Predicate<T>>> pred) {
+        return new Requirement<>(new CompositeCheck<>(range, pred));
+    }
 
     /**
-     * Generates a serializer which can only serialize basic (non-MultiRequirement) requirements from the given registry
+     * Generates a serializer which can only serialize requirements from the given registry
      * @param registry The registry of requirement types
      * @return A new serializer
      * @param <T> The type of object checked by the requirement types in the registry
@@ -94,7 +104,7 @@ public class Requirement<T, P extends Predicate<T>> {
     }
 
     /**
-     * Generates a serializer which can only serialize basic (non-MultiRequirement) requirements from the given registry
+     * Generates a serializer which can only serialize requirements from the given registry
      * @param registry The registry of requirement types
      * @param constructor The constructor to use to build the requirement
      * @return A new serializer
@@ -120,6 +130,7 @@ public class Requirement<T, P extends Predicate<T>> {
                 if (!context.isMap(value)) {
                     return SerializeResult.failure("Expected a map!");
                 }
+
                 String str = context.asString(context.get("type", value));
                 if (str == null) {
                     return SerializeResult.failure("Key type was missing!");
@@ -133,8 +144,17 @@ public class Requirement<T, P extends Predicate<T>> {
                     return SerializeResult.failure("Unable to find serializer for requirement type " + str + "!");
                 }
 
-                return ser.deserialize(context, context.get("value", value)).flatMap(pr -> constructor.apply(ser, pr, invert));
+                return ser.deserialize(context, value).flatMap(pr -> constructor.apply(ser, pr, invert));
             }
         };
     }
+
+
+    public static <T> Registry<Serializer<Predicate<T>>> defaultRegistry(String defaultNamespace) {
+
+        Registry<Serializer<Predicate<T>>> out = new Registry<>(defaultNamespace);
+        out.register("composite", CompositeCheck.serializer(serializer(out)));
+        return out;
+    }
+
 }

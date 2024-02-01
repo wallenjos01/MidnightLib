@@ -1,7 +1,6 @@
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.wallentines.midnightlib.math.Range;
-import org.wallentines.midnightlib.requirement.MultiRequirement;
 import org.wallentines.midnightlib.requirement.Requirement;
 
 import java.util.Arrays;
@@ -31,40 +30,38 @@ public class TestRequirements {
 
         List<Requirement<String, Predicate<String>>> lst = getRequirements();
 
-        MultiRequirement<String, Predicate<String>> req = new MultiRequirement<>(Range.atLeast(1), null, lst);
-
-        Assertions.assertEquals(6, req.getRequirements().size());
+        Requirement<String, Predicate<String>> req = Requirement.composite(Range.atLeast(1), lst);
 
         Assertions.assertTrue(req.check("Hello"));
         Assertions.assertTrue(req.check("Hello2"));
         Assertions.assertTrue(req.check("Hello3"));
         Assertions.assertFalse(req.check("World"));
 
-        req = new MultiRequirement<>(Range.all(), null, lst);
+        req = Requirement.composite(Range.all(), lst);
         Assertions.assertFalse(req.check("Hello"));
         Assertions.assertFalse(req.check("Hello2"));
         Assertions.assertFalse(req.check("Hello3"));
         Assertions.assertFalse(req.check("World"));
 
-        req = new MultiRequirement<>(Range.exactly(1), null, lst);
+        req = Requirement.composite(Range.exactly(1), lst);
         Assertions.assertFalse(req.check("Hello"));
         Assertions.assertTrue(req.check("Hello2"));
         Assertions.assertFalse(req.check("Hello3"));
         Assertions.assertFalse(req.check("World"));
 
-        req = new MultiRequirement<>(Range.atLeast(1), null, lst);
+        req = Requirement.composite(Range.atLeast(1), lst);
         Assertions.assertTrue(req.check("Hello"));
         Assertions.assertTrue(req.check("Hello2"));
         Assertions.assertTrue(req.check("Hello3"));
         Assertions.assertFalse(req.check("World"));
 
-        req = new MultiRequirement<>(Range.atMost(2),  null, lst);
+        req = Requirement.composite(Range.atMost(2), lst);
         Assertions.assertTrue(req.check("Hello"));
         Assertions.assertTrue(req.check("Hello2"));
         Assertions.assertFalse(req.check("Hello3"));
         Assertions.assertTrue(req.check("World"));
 
-        req = new MultiRequirement<>(Range.closedInterval(2,3), null, lst);
+        req = Requirement.composite(Range.closedInterval(2,3), lst);
         Assertions.assertTrue(req.check("Hello"));
         Assertions.assertFalse(req.check("Hello2"));
         Assertions.assertTrue(req.check("Hello3"));
@@ -74,12 +71,12 @@ public class TestRequirements {
     private static List<Requirement<String, Predicate<String>>> getRequirements() {
 
        return Arrays.asList(
-               new Requirement<>(new MustEqual("Hello")),
-               new Requirement<>(new MustEqual("Hello2")),
-               new Requirement<>(new MustEqual("Hello")),
-               new Requirement<>(new MustEqual("Hello3")),
-               new Requirement<>(new MustEqual("Hello3")),
-               new Requirement<>(new MustEqual("Hello3"))
+               Requirement.simple(new MustEqual("Hello")),
+               Requirement.simple(new MustEqual("Hello2")),
+               Requirement.simple(new MustEqual("Hello")),
+               Requirement.simple(new MustEqual("Hello3")),
+               Requirement.simple(new MustEqual("Hello3")),
+               Requirement.simple(new MustEqual("Hello3"))
        );
     }
 
