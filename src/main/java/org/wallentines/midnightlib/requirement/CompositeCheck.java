@@ -1,28 +1,44 @@
 package org.wallentines.midnightlib.requirement;
 
 import org.wallentines.mdcfg.serializer.ObjectSerializer;
+import org.wallentines.mdcfg.serializer.SerializeContext;
+import org.wallentines.mdcfg.serializer.SerializeResult;
 import org.wallentines.mdcfg.serializer.Serializer;
 import org.wallentines.midnightlib.math.Range;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.function.BiFunction;
-import java.util.function.Function;
-import java.util.function.Predicate;
 
-public class CompositeCheck<T, R extends Requirement<T, Predicate<T>>> implements Predicate<T> {
+public class CompositeCheck<T, R extends Requirement<T>> implements Check<T> {
 
+    protected final Serializer<R> generalSerializer;
     protected final List<R> requirements;
     protected final Range<Integer> range;
 
     public CompositeCheck(Range<Integer> range, Collection<R> requirements) {
+        this.generalSerializer = null;
+        this.range = range;
+        this.requirements = List.copyOf(requirements);
+    }
+
+
+    public CompositeCheck(Serializer<R> generalSerializer, Range<Integer> range, Collection<R> requirements) {
+        this.generalSerializer = generalSerializer;
         this.range = range;
         this.requirements = List.copyOf(requirements);
     }
 
     @Override
-    public boolean test(T t) {
+    public boolean check(T t) {
         return checkAll(range, requirements, t);
+    }
+
+    @Override
+    public <O> SerializeResult<O> serialize(SerializeContext<O> context) {
+        if(generalSerializer == null) {
+            return SerializeResult.failure("This check is not serializable!");
+        }
+        return serializer(generalSerializer).serialize(context, this);
     }
 
     public List<R> getRequirements() {
@@ -33,23 +49,23 @@ public class CompositeCheck<T, R extends Requirement<T, Predicate<T>>> implement
         return range;
     }
 
-    public static <T, R extends Requirement<T, Predicate<T>>> Serializer<Predicate<T>> serializer(Serializer<R> serializer) {
-        return serializer(
-                cc -> ((CompositeCheck<T,R>) cc).range,
-                cc -> ((CompositeCheck<T,R>) cc).requirements,
-                (range, requirements) -> new CompositeCheck<>(range, requirements), serializer);
+    public static <T, R extends Requirement<T>> CheckType<T> type(Serializer<R> ser) {
+        return new CheckType<T>() {
+            @Override
+            public <O> SerializeResult<Check<T>> deserialize(SerializeContext<O> context, O value) {
+                return serializer(ser).deserialize(context, value).flatMap(chk -> chk);
+            }
+        };
     }
 
-    public static <T, P extends Predicate<T>, R extends Requirement<T, P>> Serializer<P> serializer(Function<P, Range<Integer>> rangeGetter, Function<P, Collection<R>> requirementGetter, BiFunction<Range<Integer>, Collection<R>, P> constructor, Serializer<R> serializer) {
+    public static <T, R extends Requirement<T>> Serializer<CompositeCheck<T, R>> serializer(Serializer<R> serializer) {
         return ObjectSerializer.create(
-                Range.INTEGER.entry("count", rangeGetter).orElse(Range.all()),
-                serializer.listOf().entry("values", requirementGetter),
-                constructor::apply
+                Range.INTEGER.<CompositeCheck<T,R>>entry("count", CompositeCheck::getRange).optional(),
+                serializer.listOf().entry("values", CompositeCheck::getRequirements),
+                (range, list) -> new CompositeCheck<>(serializer, range, list)
         );
     }
-
-    public static <T, P extends Predicate<T>, R extends Requirement<T, P>> boolean checkAll(Range<Integer> range, Collection<R> requirements, T data) {
-
+    public static <T, R extends Requirement<T>> boolean checkAll(Range<Integer> range, Collection<R> requirements, T data) {
 
         Range<Integer> effectiveRange = range instanceof Range.All ? Range.exactly(requirements.size()) : range;
 

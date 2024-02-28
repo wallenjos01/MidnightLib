@@ -2,8 +2,8 @@ plugins {
     id("java")
     id("java-library")
     id("maven-publish")
-    id("org.wallentines.gradle-multi-version") version "0.2.1-SNAPSHOT"
-    id("org.wallentines.gradle-patch") version "0.1.1-SNAPSHOT"
+    id("org.wallentines.gradle-multi-version") version "0.2.1"
+    id("org.wallentines.gradle-patch") version "0.2.0"
 }
 
 group = "org.wallentines"

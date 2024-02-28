@@ -1,17 +1,19 @@
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.wallentines.mdcfg.serializer.SerializeContext;
+import org.wallentines.mdcfg.serializer.SerializeResult;
 import org.wallentines.midnightlib.math.Range;
+import org.wallentines.midnightlib.requirement.Check;
 import org.wallentines.midnightlib.requirement.Requirement;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import java.util.function.Predicate;
 
 public class TestRequirements {
 
 
-    private static class MustEqual implements Predicate<String> {
+    private static class MustEqual implements Check<String> {
 
         private final String data;
 
@@ -20,17 +22,22 @@ public class TestRequirements {
         }
 
         @Override
-        public boolean test(String data) {
+        public boolean check(String data) {
             return Objects.equals(data, this.data);
+        }
+
+        @Override
+        public <O> SerializeResult<O> serialize(SerializeContext<O> context) {
+            return SerializeResult.failure("");
         }
     }
 
     @Test
     public void testMultiRequirement() {
 
-        List<Requirement<String, Predicate<String>>> lst = getRequirements();
+        List<Requirement<String>> lst = getRequirements();
 
-        Requirement<String, Predicate<String>> req = Requirement.composite(Range.atLeast(1), lst);
+        Requirement<String> req = Requirement.composite(Range.atLeast(1), lst);
 
         Assertions.assertTrue(req.check("Hello"));
         Assertions.assertTrue(req.check("Hello2"));
@@ -68,7 +75,7 @@ public class TestRequirements {
         Assertions.assertFalse(req.check("World"));
     }
 
-    private static List<Requirement<String, Predicate<String>>> getRequirements() {
+    private static List<Requirement<String>> getRequirements() {
 
        return Arrays.asList(
                Requirement.simple(new MustEqual("Hello")),

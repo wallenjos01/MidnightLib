@@ -1,7 +1,6 @@
 package org.wallentines.midnightlib.requirement;
 
 import org.jetbrains.annotations.Nullable;
-import org.wallentines.mdcfg.Functions;
 import org.wallentines.mdcfg.serializer.SerializeContext;
 import org.wallentines.mdcfg.serializer.SerializeResult;
 import org.wallentines.mdcfg.serializer.Serializer;
@@ -10,24 +9,23 @@ import org.wallentines.midnightlib.registry.Registry;
 import org.wallentines.midnightlib.registry.RegistryBase;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.function.Predicate;
 
 /**
  * A serializable object which represents a Predicate for a particular object
  * @param <T> The type of object to check
  */
-public class Requirement<T, P extends Predicate<T>> {
+public class Requirement<T> {
 
-    protected final Serializer<P> serializer;
-    protected final P check;
+    protected final CheckType<T> type;
+    protected final Check<T> check;
     protected final boolean invert;
 
     /**
      * Constructs a non-serializable Requirement instance with the given type and config
      * @param check The code used to check the requirement target
      */
-    public Requirement(P check) {
+    public Requirement(Check<T> check) {
         this(null, check, false);
     }
 
@@ -36,18 +34,18 @@ public class Requirement<T, P extends Predicate<T>> {
      * @param check The code used to check the requirement target
      * @param invert Whether to invert the result of the check
      */
-    public Requirement(P check, boolean invert) {
+    public Requirement(Check<T> check, boolean invert) {
         this(null, check, invert);
     }
 
     /**
      * Constructs a new Requirement instance with the given type and config
-     * @param serializer The type of requirement
+     * @param type The type of requirement
      * @param check The code used to check the requirement target
      * @param invert Whether to invert the result of the check
      */
-    public Requirement(@Nullable Serializer<P> serializer, P check, boolean invert) {
-        this.serializer = serializer;
+    public Requirement(@Nullable CheckType<T> type, Check<T> check, boolean invert) {
+        this.type = type;
         this.check = check;
         this.invert = invert;
     }
@@ -59,38 +57,51 @@ public class Requirement<T, P extends Predicate<T>> {
      */
 
     public boolean check(T data) {
-        return invert ^ check.test(data);
+        return invert ^ check.check(data);
     }
 
     public boolean isInverted() {
         return invert;
     }
 
-    public boolean isSerializable() {
-        return serializer != null;
-    }
-
-    public <C> SerializeResult<C> serialize(SerializeContext<C> ctx) {
-        if(serializer == null) {
-            return SerializeResult.failure("This requirement is not serializable!");
-        }
-        return serializer.serialize(ctx, check);
-    }
 
     /**
      * Gets the type of this requirement
      * @return The type of requirement
      */
-    public Serializer<P> getSerializer() {
-        return serializer;
+    public CheckType<T> getType() {
+        return type;
     }
 
-    public static <T> Requirement<T, Predicate<T>> simple(Predicate<T> pred) {
-        return new Requirement<>(pred);
+    /**
+     * Creates a simple requirement using the given check
+     * @param check The logic to use to check
+     * @return A new requirement
+     * @param <T> The type of things to check
+     */
+    public static <T> Requirement<T> simple(Check<T> check) {
+        return new Requirement<>(check);
     }
 
-    public static <T> Requirement<T, Predicate<T>> composite(Range<Integer> range, Collection<Requirement<T, Predicate<T>>> pred) {
-        return new Requirement<>(new CompositeCheck<>(range, pred));
+    /**
+     * Creates a simple requirement using the given predicate
+     * @param predicate The logic to use to check
+     * @return A new requirement
+     * @param <T> The type of things to check
+     */
+    public static <T> Requirement<T> simple(Predicate<T> predicate) {
+        return new Requirement<>(Check.of(predicate));
+    }
+
+    /**
+     * Creates a composite requirement using the given range and sub-requirements
+     * @param range The amount of requirements which must be completed
+     * @param requirements The sub-requirements
+     * @return A new requirement
+     * @param <T> The type of things to check
+     */
+    public static <T> Requirement<T> composite(Range<Integer> range, Collection<Requirement<T>> requirements) {
+        return new Requirement<>(new CompositeCheck<>(null, range, requirements));
     }
 
     /**
@@ -99,33 +110,26 @@ public class Requirement<T, P extends Predicate<T>> {
      * @return A new serializer
      * @param <T> The type of object checked by the requirement types in the registry
      */
-    public static <T, P extends Predicate<T>> Serializer<Requirement<T, P>> serializer(RegistryBase<?, Serializer<P>> registry) {
-        return serializer(registry, Requirement::new);
-    }
+    public static <T> Serializer<Requirement<T>> serializer(RegistryBase<?, CheckType<T>> registry) {
 
-    /**
-     * Generates a serializer which can only serialize requirements from the given registry
-     * @param registry The registry of requirement types
-     * @param constructor The constructor to use to build the requirement
-     * @return A new serializer
-     * @param <T> The type of object checked by the requirement types in the registry
-     */
-    public static <T, P extends Predicate<T>, R extends Requirement<T, P>> Serializer<R> serializer(RegistryBase<?, Serializer<P>> registry, Functions.F3<Serializer<P>, P, Boolean, R> constructor) {
         return new Serializer<>() {
             @Override
-            public <O> SerializeResult<O> serialize(SerializeContext<O> context, R value) {
+            public <O> SerializeResult<O> serialize(SerializeContext<O> context, Requirement<T> value) {
 
-                return value.serialize(context).flatMap(o -> {
-                    O out = context.toMap(new HashMap<>());
-                    context.set("type", context.toString(registry.nameSerializer().writeString(value.getSerializer())), out);
-                    context.set("value", o, out);
-                    if(value.invert) context.set("invert", context.toBoolean(true), out);
-                    return out;
+                return value.check.serialize(context).map(o -> {
+                    if (!context.isMap(o)) {
+                        return SerializeResult.failure("Check serializer returned invalid result!");
+                    }
+
+                    context.set("type", context.toString(registry.nameSerializer().writeString(value.getType())), o);
+                    if(value.invert) context.set("invert", context.toBoolean(true), o);
+
+                    return SerializeResult.success(o);
                 });
             }
 
             @Override
-            public <O> SerializeResult<R> deserialize(SerializeContext<O> context, O value) {
+            public <O> SerializeResult<Requirement<T>> deserialize(SerializeContext<O> context, O value) {
 
                 if (!context.isMap(value)) {
                     return SerializeResult.failure("Expected a map!");
@@ -139,21 +143,21 @@ public class Requirement<T, P extends Predicate<T>> {
                 Boolean invertNullable = context.asBoolean(context.get("invert", value));
                 boolean invert = invertNullable != null && invertNullable;
 
-                Serializer<P> ser = registry.nameSerializer().readString(str);
-                if (ser == null) {
+                CheckType<T> type = registry.nameSerializer().readString(str);
+                if (type == null) {
                     return SerializeResult.failure("Unable to find serializer for requirement type " + str + "!");
                 }
 
-                return ser.deserialize(context, value).flatMap(pr -> constructor.apply(ser, pr, invert));
+                return type.deserialize(context, value).flatMap(pr -> new Requirement<>(type, pr, invert));
             }
         };
     }
 
 
-    public static <T> Registry<Serializer<Predicate<T>>> defaultRegistry(String defaultNamespace) {
+    public static <T> Registry<CheckType<T>> defaultRegistry(String defaultNamespace) {
 
-        Registry<Serializer<Predicate<T>>> out = new Registry<>(defaultNamespace);
-        out.register("composite", CompositeCheck.serializer(serializer(out)));
+        Registry<CheckType<T>> out = new Registry<>(defaultNamespace);
+        out.register("composite", CompositeCheck.type(serializer(out)));
         return out;
     }
 
