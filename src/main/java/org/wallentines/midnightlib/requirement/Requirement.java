@@ -15,17 +15,17 @@ import java.util.function.Predicate;
  * A serializable object which represents a Predicate for a particular object
  * @param <T> The type of object to check
  */
-public class Requirement<T> {
+public class Requirement<V, T extends CheckType<V>> {
 
-    protected final CheckType<T> type;
-    protected final Check<T> check;
+    protected final T type;
+    protected final Check<V> check;
     protected final boolean invert;
 
     /**
      * Constructs a non-serializable Requirement instance with the given type and config
      * @param check The code used to check the requirement target
      */
-    public Requirement(Check<T> check) {
+    public Requirement(Check<V> check) {
         this(null, check, false);
     }
 
@@ -34,7 +34,7 @@ public class Requirement<T> {
      * @param check The code used to check the requirement target
      * @param invert Whether to invert the result of the check
      */
-    public Requirement(Check<T> check, boolean invert) {
+    public Requirement(Check<V> check, boolean invert) {
         this(null, check, invert);
     }
 
@@ -44,7 +44,7 @@ public class Requirement<T> {
      * @param check The code used to check the requirement target
      * @param invert Whether to invert the result of the check
      */
-    public Requirement(@Nullable CheckType<T> type, Check<T> check, boolean invert) {
+    public Requirement(@Nullable T type, Check<V> check, boolean invert) {
         this.type = type;
         this.check = check;
         this.invert = invert;
@@ -56,7 +56,7 @@ public class Requirement<T> {
      * @return Whether the object satisfies the requirement
      */
 
-    public boolean check(T data) {
+    public boolean check(V data) {
         return invert ^ check.check(data);
     }
 
@@ -69,7 +69,7 @@ public class Requirement<T> {
      * Gets the type of this requirement
      * @return The type of requirement
      */
-    public CheckType<T> getType() {
+    public T getType() {
         return type;
     }
 
@@ -79,7 +79,7 @@ public class Requirement<T> {
      * @return A new requirement
      * @param <T> The type of things to check
      */
-    public static <T> Requirement<T> simple(Check<T> check) {
+    public static <T> Requirement<T, CheckType<T>> simple(Check<T> check) {
         return new Requirement<>(check);
     }
 
@@ -89,7 +89,7 @@ public class Requirement<T> {
      * @return A new requirement
      * @param <T> The type of things to check
      */
-    public static <T> Requirement<T> simple(Predicate<T> predicate) {
+    public static <T> Requirement<T, CheckType<T>> simple(Predicate<T> predicate) {
         return new Requirement<>(Check.of(predicate));
     }
 
@@ -98,9 +98,10 @@ public class Requirement<T> {
      * @param range The amount of requirements which must be completed
      * @param requirements The sub-requirements
      * @return A new requirement
-     * @param <T> The type of things to check
+     * @param <V> The type of things to check
+     * @param <T> The check type
      */
-    public static <T> Requirement<T> composite(Range<Integer> range, Collection<Requirement<T>> requirements) {
+    public static <V, T extends CheckType<V>> Requirement<V, T> composite(Range<Integer> range, Collection<Requirement<V,T>> requirements) {
         return new Requirement<>(new CompositeCheck<>(null, range, requirements));
     }
 
@@ -110,11 +111,11 @@ public class Requirement<T> {
      * @return A new serializer
      * @param <T> The type of object checked by the requirement types in the registry
      */
-    public static <T> Serializer<Requirement<T>> serializer(RegistryBase<?, CheckType<T>> registry) {
+    public static <V, T extends CheckType<V>> Serializer<Requirement<V, T>> serializer(RegistryBase<?, T> registry) {
 
         return new Serializer<>() {
             @Override
-            public <O> SerializeResult<O> serialize(SerializeContext<O> context, Requirement<T> value) {
+            public <O> SerializeResult<O> serialize(SerializeContext<O> context, Requirement<V,T> value) {
 
                 return value.check.serialize(context).map(o -> {
                     if (!context.isMap(o)) {
@@ -129,7 +130,7 @@ public class Requirement<T> {
             }
 
             @Override
-            public <O> SerializeResult<Requirement<T>> deserialize(SerializeContext<O> context, O value) {
+            public <O> SerializeResult<Requirement<V,T>> deserialize(SerializeContext<O> context, O value) {
 
                 if (!context.isMap(value)) {
                     return SerializeResult.failure("Expected a map!");
@@ -143,7 +144,7 @@ public class Requirement<T> {
                 Boolean invertNullable = context.asBoolean(context.get("invert", value));
                 boolean invert = invertNullable != null && invertNullable;
 
-                CheckType<T> type = registry.nameSerializer().readString(str);
+                T type = registry.nameSerializer().readString(str);
                 if (type == null) {
                     return SerializeResult.failure("Unable to find serializer for requirement type " + str + "!");
                 }

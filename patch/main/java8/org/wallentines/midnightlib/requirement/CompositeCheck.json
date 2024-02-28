@@ -5,6 +5,6 @@
     ],
     "type": "replace",
     "find": "List.copyOf(",
-    "replace": "new java.util.ArrayList<R>("
+    "replace": "new java.util.ArrayList<Requirement<V,T>>("
   }
 ]
