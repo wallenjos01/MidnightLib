@@ -39,6 +39,7 @@ dependencies {
 
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.junit.jupiter)
+    testImplementation("org.slf4j:slf4j-simple:2.0.7")
 }
 
 tasks.test {
