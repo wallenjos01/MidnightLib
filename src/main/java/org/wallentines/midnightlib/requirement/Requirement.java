@@ -1,6 +1,7 @@
 package org.wallentines.midnightlib.requirement;
 
 import org.jetbrains.annotations.Nullable;
+import org.wallentines.mdcfg.Functions;
 import org.wallentines.mdcfg.serializer.SerializeContext;
 import org.wallentines.mdcfg.serializer.SerializeResult;
 import org.wallentines.mdcfg.serializer.Serializer;
@@ -105,17 +106,29 @@ public class Requirement<V, T extends CheckType<V>> {
         return new Requirement<>(new CompositeCheck<>(null, range, requirements));
     }
 
+
     /**
      * Generates a serializer which can only serialize requirements from the given registry
      * @param registry The registry of requirement types
      * @return A new serializer
      * @param <T> The type of object checked by the requirement types in the registry
      */
-    public static <V, T extends CheckType<V>> Serializer<Requirement<V, T>> serializer(RegistryBase<?, T> registry) {
+    public static <V, T extends CheckType<V>> Serializer<Requirement<V,T>> serializer(RegistryBase<?, T> registry) {
+        return serializer(registry, Requirement::new);
+    }
+
+    /**
+     * Generates a serializer which can only serialize requirements from the given registry
+     * @param registry The registry of requirement types
+     * @param constructor The requirement constructor
+     * @return A new serializer
+     * @param <T> The type of object checked by the requirement types in the registry
+     */
+    public static <V, T extends CheckType<V>, R extends Requirement<V,T>> Serializer<R> serializer(RegistryBase<?, T> registry, Functions.F3<T, Check<V>, Boolean, R> constructor) {
 
         return new Serializer<>() {
             @Override
-            public <O> SerializeResult<O> serialize(SerializeContext<O> context, Requirement<V,T> value) {
+            public <O> SerializeResult<O> serialize(SerializeContext<O> context, R value) {
 
                 return value.check.serialize(context).map(o -> {
                     if (!context.isMap(o)) {
@@ -130,7 +143,7 @@ public class Requirement<V, T extends CheckType<V>> {
             }
 
             @Override
-            public <O> SerializeResult<Requirement<V,T>> deserialize(SerializeContext<O> context, O value) {
+            public <O> SerializeResult<R> deserialize(SerializeContext<O> context, O value) {
 
                 if (!context.isMap(value)) {
                     return SerializeResult.failure("Expected a map!");
@@ -149,7 +162,7 @@ public class Requirement<V, T extends CheckType<V>> {
                     return SerializeResult.failure("Unable to find serializer for requirement type " + str + "!");
                 }
 
-                return type.deserialize(context, value).flatMap(pr -> new Requirement<>(type, pr, invert));
+                return type.deserialize(context, value).flatMap(chk -> constructor.apply(type, chk, invert));
             }
         };
     }

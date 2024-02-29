@@ -3,6 +3,6 @@
     "lines": ["all"],
     "type": "replace",
     "find": "return new Serializer<>()",
-    "replace": "return new Serializer<Requirement<V, T>>()"
+    "replace": "return new Serializer<R>()"
   }
 ]
