@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "org.wallentines"
-version = "1.6.0-SNAPSHOT"
+version = "1.6.0"
 
 java {
     toolchain.languageVersion.set(JavaLanguageVersion.of(17))
@@ -32,7 +32,7 @@ repositories {
 
 dependencies {
 
-    api("org.wallentines:midnightcfg-api:2.1.0-SNAPSHOT")
+    api("org.wallentines:midnightcfg-api:2.1.0")
     compileOnly("org.jetbrains:annotations:24.0.1")
 
     implementation("org.slf4j:slf4j-api:2.0.7")
