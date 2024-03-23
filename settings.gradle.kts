@@ -5,4 +5,6 @@ pluginManagement {
         gradlePluginPortal()
         mavenLocal()
     }
+
+    includeBuild("gradle/plugins")
 }

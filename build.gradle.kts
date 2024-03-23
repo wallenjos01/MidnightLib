@@ -1,17 +1,7 @@
 plugins {
-    id("java")
-    id("java-library")
-    id("maven-publish")
+    id("midnight-build")
     id("org.wallentines.gradle-multi-version") version "0.2.1"
     id("org.wallentines.gradle-patch") version "0.2.0"
-}
-
-group = "org.wallentines"
-version = "1.6.0"
-
-java {
-    toolchain.languageVersion.set(JavaLanguageVersion.of(17))
-    withSourcesJar()
 }
 
 multiVersion {
@@ -40,23 +30,4 @@ dependencies {
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.junit.jupiter)
     testImplementation("org.slf4j:slf4j-simple:2.0.7")
-}
-
-tasks.test {
-    useJUnitPlatform()
-    workingDir("run/test")
-    maxHeapSize = "1G"
-}
-
-publishing {
-
-    publications.create<MavenPublication>("maven") {
-        from(components["java"])
-    }
-    if (project.hasProperty("pubUrl")) {
-        repositories.maven(project.properties["pubUrl"] as String) {
-            name = "pub"
-            credentials(PasswordCredentials::class.java)
-        }
-    }
 }
