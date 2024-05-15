@@ -120,6 +120,7 @@ public abstract class RegistryBase<I, T> implements Iterable<T> {
             for(int i = 0 ; i < index ; i++) {
                 if(values.get(i) == value) return i;
             }
+            return null;
         }
 
         return index;
