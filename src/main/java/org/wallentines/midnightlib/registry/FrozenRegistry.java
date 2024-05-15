@@ -10,7 +10,7 @@ public class FrozenRegistry<I, T> extends RegistryBase<I, T> {
     private final InlineSerializer<T> nameSerializer;
 
     public FrozenRegistry(RegistryBase<I, T> registry, InlineSerializer<T> nameSerializer) {
-        super(registry.allowDuplicateValues, registry.allowNullValues, List.copyOf(registry.ids), List.copyOf(registry.values), Map.copyOf(registry.indexById), Map.copyOf(registry.indexByValue));
+        super(registry.allowDuplicateValues, registry.allowNullValues, registry.allowEqualValues, List.copyOf(registry.ids), List.copyOf(registry.values), Map.copyOf(registry.indexById), Map.copyOf(registry.indexByValue));
         this.size = registry.size;
         this.nameSerializer = nameSerializer;
     }
