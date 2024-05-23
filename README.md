@@ -10,7 +10,7 @@ repositories {
 }
 
 dependencies {
-    compileOnly("org.wallentines:midnightlib:1.6.0")
+    compileOnly("org.wallentines:midnightlib:1.6.1")
 }
 ```
 
