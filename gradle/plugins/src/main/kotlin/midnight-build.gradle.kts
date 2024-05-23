@@ -1,12 +1,33 @@
 plugins {
     id("java")
     id("java-library")
+    id("org.wallentines.gradle-multi-version")
+    id("org.wallentines.gradle-patch")
     id("maven-publish")
 }
 
 java {
-    toolchain.languageVersion.set(JavaLanguageVersion.of(17))
+    toolchain.languageVersion.set(JavaLanguageVersion.of(21))
     withSourcesJar()
+}
+
+multiVersion {
+    defaultVersion(21)
+    additionalVersions(17, 8)
+}
+
+patch {
+    patchSet("java8", sourceSets["main"], sourceSets["main"].java, multiVersion.getCompileTask(8))
+    patchSet("java17", sourceSets["main"], sourceSets["main"].java, multiVersion.getCompileTask(17))
+}
+
+repositories {
+    mavenCentral()
+    maven("https://maven.wallentines.org/releases")
+
+    if(GradleVersion.version(version as String).isSnapshot) {
+        maven("https://maven.wallentines.org/snapshots")
+    }
 }
 
 tasks.test {

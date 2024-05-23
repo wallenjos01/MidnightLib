@@ -121,6 +121,7 @@ public class Either<L,R> {
      * @param <R> The type of value on the right
      */
     public static <L,R> Either<L, R> left(L value) {
+        assert value != null;
         return new Either<>(value, null);
     }
 
@@ -132,6 +133,7 @@ public class Either<L,R> {
      * @param <R> The type of value on the right
      */
     public static <L,R> Either<L, R> right(R value) {
+        assert value != null;
         return new Either<>(null, value);
     }
 

@@ -17,7 +17,7 @@ public class Registry<T> extends RegistryBase<Identifier, T> {
      * @param defaultNamespace The default namespace which will be used when deserializing IDs
      */
     public Registry(String defaultNamespace) {
-        this(defaultNamespace, false, false);
+        this(defaultNamespace, false, false, false);
     }
 
     /**
@@ -25,9 +25,10 @@ public class Registry<T> extends RegistryBase<Identifier, T> {
      * @param defaultNamespace The default namespace which will be used when deserializing IDs
      * @param allowDuplicateValues Whether the same object can be registered to multiple IDs. Defaults to false
      * @param allowNullValues Whether null values can be registered. Defaults to false
+     * @param allowEqualValues Whether two equal objects can be registered. Defaults to false
      */
-    public Registry(String defaultNamespace, boolean allowDuplicateValues, boolean allowNullValues) {
-        super(allowDuplicateValues, allowNullValues);
+    public Registry(String defaultNamespace, boolean allowDuplicateValues, boolean allowNullValues, boolean allowEqualValues) {
+        super(allowDuplicateValues, allowNullValues, allowEqualValues);
         this.defaultNamespace = defaultNamespace;
     }
 

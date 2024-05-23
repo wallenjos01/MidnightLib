@@ -21,14 +21,16 @@ public abstract class RegistryBase<I, T> implements Iterable<T> {
     protected int size;
     protected final boolean allowDuplicateValues;
     protected final boolean allowNullValues;
+    protected final boolean allowEqualValues;
 
-    protected RegistryBase(boolean allowDuplicateValues, boolean allowNullValues) {
-        this(allowDuplicateValues, allowNullValues, new ArrayList<>(), new ArrayList<>(), new HashMap<>(), new HashMap<>());
+    protected RegistryBase(boolean allowDuplicateValues, boolean allowNullValues, boolean allowEqualValues) {
+        this(allowDuplicateValues, allowNullValues, allowEqualValues, new ArrayList<>(), new ArrayList<>(), new HashMap<>(), new HashMap<>());
     }
 
-    protected RegistryBase(boolean allowDuplicateValues, boolean allowNullValues, List<I> ids, List<T> values, Map<I, Integer> indexById, Map<T, Integer> indexByValue) {
+    protected RegistryBase(boolean allowDuplicateValues, boolean allowNullValues, boolean allowEqualValues, List<I> ids, List<T> values, Map<I, Integer> indexById, Map<T, Integer> indexByValue) {
         this.allowDuplicateValues = allowDuplicateValues;
         this.allowNullValues = allowNullValues;
+        this.allowEqualValues = allowEqualValues;
         this.ids = ids;
         this.values = values;
         this.indexById = indexById;
@@ -49,6 +51,9 @@ public abstract class RegistryBase<I, T> implements Iterable<T> {
         }
         if(ids.contains(id)) {
             throw new IllegalArgumentException("Attempt to register value with duplicate ID!");
+        }
+        if(!allowEqualValues && indexByValue.containsKey(value)) {
+            throw new IllegalArgumentException("Attempt to register a value equal to an existing value! (" + value + ")");
         }
         if(!allowDuplicateValues && indexOf(value) != null) {
             throw new IllegalArgumentException("Attempt to register value twice! (" + value + ")");
@@ -108,7 +113,15 @@ public abstract class RegistryBase<I, T> implements Iterable<T> {
     public Integer indexOf(T value) {
 
         Integer index = indexByValue.get(value);
-        if(index == null || values.get(index) != value) return null;
+        if(index == null) return null;
+
+        if(values.get(index) != value) {
+            // Traverse the registry
+            for(int i = 0 ; i < index ; i++) {
+                if(values.get(i) == value) return i;
+            }
+            return null;
+        }
 
         return index;
     }

@@ -6,11 +6,11 @@ A general use Java library including Modules, Events, Registries, and some basic
 Add the following to your `build.gradle.kts` file:
 ```
 repositories {
-    maven("https://maven.wallentines.org/")
+    maven("https://maven.wallentines.org/releases")
 }
 
 dependencies {
-    compileOnly("org.wallentines:midnightlib:1.5.0-SNAPSHOT")
+    compileOnly("org.wallentines:midnightlib:1.6.1")
 }
 ```
 

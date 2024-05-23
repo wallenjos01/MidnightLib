@@ -5,6 +5,8 @@ import org.wallentines.midnightlib.registry.Identifier;
 import org.wallentines.midnightlib.registry.Registry;
 import org.wallentines.midnightlib.registry.StringRegistry;
 
+import java.util.Objects;
+
 public class TestRegistry {
 
     @Test
@@ -132,6 +134,65 @@ public class TestRegistry {
 
         Assertions.assertEquals(2, frozen.getSize());
         Assertions.assertTrue(caught);
+
+    }
+
+    private static class WrappedNumber {
+        final int number;
+
+        public WrappedNumber(int number) {
+            this.number = number;
+        }
+
+        public int getNumber() {
+            return number;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            WrappedNumber that = (WrappedNumber) o;
+            return number == that.number;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(number);
+        }
+    }
+
+    @Test
+    public void testEquals() {
+
+        StringRegistry<WrappedNumber> reg = new StringRegistry<>();
+
+        WrappedNumber num1 = new WrappedNumber(1);
+        WrappedNumber num2 = new WrappedNumber(2);
+        WrappedNumber num3 = new WrappedNumber(1);
+
+        reg.register("num1", num1);
+        reg.register("num2", num2);
+
+        Assertions.assertEquals("num1", reg.getId(num1));
+        Assertions.assertEquals("num2", reg.getId(num2));
+
+        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+            reg.register("num3", num3);
+        });
+
+
+        StringRegistry<WrappedNumber> reg2 = new StringRegistry<>(false, false, true);
+        reg2.register("num1", num1);
+        reg2.register("num2", num2);
+
+        Assertions.assertDoesNotThrow(() -> {
+            reg2.register("num3", num3);
+        });
+
+        Assertions.assertEquals("num1", reg2.getId(num1));
+        Assertions.assertEquals("num2", reg2.getId(num2));
+        Assertions.assertEquals("num3", reg2.getId(num3));
 
     }
 

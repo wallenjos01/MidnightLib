@@ -28,17 +28,17 @@ public class SortedCollection<T extends Comparable<T>> implements Collection<T> 
     }
 
     @Override
-    public Iterator<T> iterator() {
+    public @NotNull Iterator<T> iterator() {
         return internal.iterator();
     }
 
     @Override
-    public Object[] toArray() {
+    public Object @NotNull [] toArray() {
         return internal.toArray();
     }
 
     @Override
-    public <T1> T1[] toArray(T1 @NotNull [] a) {
+    public <T1> T1 @NotNull [] toArray(T1 @NotNull [] a) {
         return internal.toArray(a);
     }
 
