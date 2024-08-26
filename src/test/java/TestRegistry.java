@@ -1,9 +1,7 @@
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.wallentines.midnightlib.registry.FrozenRegistry;
 import org.wallentines.midnightlib.registry.Identifier;
 import org.wallentines.midnightlib.registry.Registry;
-import org.wallentines.midnightlib.registry.StringRegistry;
 
 import java.util.Objects;
 
@@ -37,7 +35,7 @@ public class TestRegistry {
     @Test
     public void testRegistryBase() {
 
-        StringRegistry<Integer> registry = new StringRegistry<>();
+        Registry<String, Integer> registry = Registry.createStringRegistry();
         Assertions.assertEquals(0, registry.getSize());
 
         int registered = registry.register("key1", 1);
@@ -86,9 +84,8 @@ public class TestRegistry {
     @Test
     public void testRegistry() {
 
-        Registry<Integer> registry = new Registry<>("test");
+        Registry<Identifier, Integer> registry = Registry.create("test");
         Assertions.assertEquals(0, registry.getSize());
-        Assertions.assertEquals("test", registry.getDefaultNamespace());
 
         Identifier key1 = new Identifier("test", "key1");
         registry.register(key1, 1);
@@ -104,9 +101,8 @@ public class TestRegistry {
     @Test
     public void testRegistryFreeze() {
 
-        Registry<Integer> registry = new Registry<>("test");
+        Registry<Identifier, Integer> registry = Registry.create("test");
         Assertions.assertEquals(0, registry.getSize());
-        Assertions.assertEquals("test", registry.getDefaultNamespace());
 
         Identifier key1 = new Identifier("test", "key1");
         registry.register(key1, 1);
@@ -119,7 +115,7 @@ public class TestRegistry {
         Assertions.assertEquals(2, registry.get(new Identifier("test2", "key2")));
 
 
-        FrozenRegistry<Identifier, Integer> frozen = registry.freeze();
+        Registry.Frozen<Identifier, Integer> frozen = registry.freeze();
 
         Assertions.assertEquals(2, frozen.getSize());
         Assertions.assertEquals(1, frozen.get(key1));
@@ -165,7 +161,7 @@ public class TestRegistry {
     @Test
     public void testEquals() {
 
-        StringRegistry<WrappedNumber> reg = new StringRegistry<>();
+        Registry<String, WrappedNumber> reg = Registry.createStringRegistry();
 
         WrappedNumber num1 = new WrappedNumber(1);
         WrappedNumber num2 = new WrappedNumber(2);
@@ -182,7 +178,7 @@ public class TestRegistry {
         });
 
 
-        StringRegistry<WrappedNumber> reg2 = new StringRegistry<>(false, false, true);
+        Registry<String, WrappedNumber> reg2 = Registry.createStringRegistry(false, false, true);
         reg2.register("num1", num1);
         reg2.register("num2", num2);
 

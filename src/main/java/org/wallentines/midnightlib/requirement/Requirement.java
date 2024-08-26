@@ -6,8 +6,8 @@ import org.wallentines.mdcfg.serializer.SerializeContext;
 import org.wallentines.mdcfg.serializer.SerializeResult;
 import org.wallentines.mdcfg.serializer.Serializer;
 import org.wallentines.midnightlib.math.Range;
+import org.wallentines.midnightlib.registry.Identifier;
 import org.wallentines.midnightlib.registry.Registry;
-import org.wallentines.midnightlib.registry.RegistryBase;
 
 import java.util.Collection;
 import java.util.function.Predicate;
@@ -113,7 +113,7 @@ public class Requirement<V, T extends CheckType<V>> {
      * @return A new serializer
      * @param <T> The type of object checked by the requirement types in the registry
      */
-    public static <V, T extends CheckType<V>> Serializer<Requirement<V,T>> serializer(RegistryBase<?, T> registry) {
+    public static <V, T extends CheckType<V>> Serializer<Requirement<V,T>> serializer(Registry<?, T> registry) {
         return serializer(registry, Requirement::new);
     }
 
@@ -124,7 +124,7 @@ public class Requirement<V, T extends CheckType<V>> {
      * @return A new serializer
      * @param <T> The type of object checked by the requirement types in the registry
      */
-    public static <V, T extends CheckType<V>, R extends Requirement<V,T>> Serializer<R> serializer(RegistryBase<?, T> registry, Functions.F3<T, Check<V>, Boolean, R> constructor) {
+    public static <V, T extends CheckType<V>, R extends Requirement<V,T>> Serializer<R> serializer(Registry<?, T> registry, Functions.F3<T, Check<V>, Boolean, R> constructor) {
 
         return new Serializer<>() {
             @Override
@@ -135,7 +135,7 @@ public class Requirement<V, T extends CheckType<V>> {
                         return SerializeResult.failure("Check serializer returned invalid result!");
                     }
 
-                    context.set("type", context.toString(registry.nameSerializer().writeString(value.getType())), o);
+                    context.set("type", context.toString(registry.byIdSerializer().writeString(value.getType())), o);
                     if(value.invert) context.set("invert", context.toBoolean(true), o);
 
                     return SerializeResult.success(o);
@@ -157,7 +157,7 @@ public class Requirement<V, T extends CheckType<V>> {
                 Boolean invertNullable = context.asBoolean(context.get("invert", value));
                 boolean invert = invertNullable != null && invertNullable;
 
-                T type = registry.nameSerializer().readString(str);
+                T type = registry.byIdSerializer().readString(str);
                 if (type == null) {
                     return SerializeResult.failure("Unable to find serializer for requirement type " + str + "!");
                 }
@@ -168,10 +168,10 @@ public class Requirement<V, T extends CheckType<V>> {
     }
 
 
-    public static <T> Registry<CheckType<T>> defaultRegistry(String defaultNamespace) {
+    public static <T> Registry<Identifier, CheckType<T>> defaultRegistry(String defaultNamespace) {
 
-        Registry<CheckType<T>> out = new Registry<>(defaultNamespace);
-        out.register("composite", CompositeCheck.type(serializer(out)));
+        Registry<Identifier, CheckType<T>> out = Registry.create(defaultNamespace);
+        out.tryRegister("composite", CompositeCheck.type(serializer(out)));
         return out;
     }
 

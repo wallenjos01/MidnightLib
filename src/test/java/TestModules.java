@@ -62,7 +62,7 @@ public class TestModules {
         final AtomicBoolean initialized = new AtomicBoolean(false);
         ModuleInfo<Void, Module<Void>> info = new ModuleInfo<>(() -> new TestModule(initialized), id, new ConfigSection().with("default", true));
 
-        Registry<ModuleInfo<Void, Module<Void>>> reg = new Registry<>("midnight");
+        Registry<Identifier, ModuleInfo<Void, Module<Void>>> reg = Registry.create("midnight");
         reg.register(id, info);
 
         ModuleManager<Void, Module<Void>> manager = new ModuleManager<>();
@@ -109,7 +109,7 @@ public class TestModules {
         final AtomicBoolean eventUnloaded = new AtomicBoolean(false);
         ModuleInfo<Void, Module<Void>> info = new ModuleInfo<>(() -> new TestModule(initialized), id, new ConfigSection().with("default", true));
 
-        Registry<ModuleInfo<Void, Module<Void>>> reg = new Registry<>("midnight");
+        Registry<Identifier, ModuleInfo<Void, Module<Void>>> reg = Registry.create("midnight");
         reg.register(id, info);
 
         ModuleManager<Void, Module<Void>> manager = new ModuleManager<>();
@@ -152,7 +152,7 @@ public class TestModules {
         ModuleInfo<Void, Module<Void>> info = new ModuleInfo<>(() -> new TestModule(initialized), id, new ConfigSection().with("default", true));
         ModuleInfo<Void, Module<Void>> info2 = new ModuleInfo<Void, Module<Void>>(() -> new TestModule2(initialized2), id2, new ConfigSection().with("default", true)).dependsOn(id);
 
-        Registry<ModuleInfo<Void, Module<Void>>> reg = new Registry<>("midnight");
+        Registry<Identifier, ModuleInfo<Void, Module<Void>>> reg = Registry.create("midnight");
         reg.register(id2, info2);
         reg.register(id, info);
 
@@ -193,7 +193,7 @@ public class TestModules {
 
         ModuleInfo<String, Module<String>> info = new ModuleInfo<>(TestModule3::new, id, new ConfigSection().with("default", true));
 
-        Registry<ModuleInfo<String, Module<String>>> reg = new Registry<>("midnight");
+        Registry<Identifier, ModuleInfo<String, Module<String>>> reg = Registry.create("midnight");
         reg.register(id, info);
 
         ModuleManager<String, Module<String>> manager = new ModuleManager<>();

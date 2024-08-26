@@ -11,7 +11,6 @@ import org.wallentines.midnightlib.event.Event;
 import org.wallentines.midnightlib.event.HandlerList;
 import org.wallentines.midnightlib.registry.Identifier;
 import org.wallentines.midnightlib.registry.Registry;
-import org.wallentines.midnightlib.registry.RegistryBase;
 
 import java.util.*;
 
@@ -24,7 +23,7 @@ public class ModuleManager<T, M extends Module<T>> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("ModuleManager");
 
-    private final Registry<M> loaded;
+    private final Registry<Identifier, M> loaded;
     private final HashMap<Class<? extends M>, Identifier> idsByClass = new HashMap<>();
     private final HashMap<Identifier, Set<Identifier>> dependents = new HashMap<>();
 
@@ -43,18 +42,18 @@ public class ModuleManager<T, M extends Module<T>> {
      * Constructs a new module manager
      */
     public ModuleManager() {
-        this.loaded = new Registry<>("unknown");
+        this.loaded = Registry.create("unknown");
     }
 
     /**
      * Creates and initializes all modules from the given registry, reading the given config and passing in the given
      * data. All existing modules will be unloaded first.
-     * @param config The module registry config (see {@link ModuleManager#generateConfig(RegistryBase) generateConfig})
+     * @param config The module registry config (see {@link ModuleManager#generateConfig(Registry) generateConfig})
      * @param data The data to pass into module initializers
      * @param registry The registry when module information is stored.
      * @return How many modules were loaded
      */
-    public int loadAll(ConfigSection config, T data, RegistryBase<Identifier, ModuleInfo<T, M>> registry) {
+    public int loadAll(ConfigSection config, T data, Registry<Identifier, ModuleInfo<T, M>> registry) {
 
         if(loaded.getSize() > 0) {
             unloadAll();
@@ -69,7 +68,7 @@ public class ModuleManager<T, M extends Module<T>> {
 
             if(!config.hasSection(key)) continue;
 
-            SerializeResult<ModuleInfo<T, M>> res = registry.nameSerializer().deserialize(ConfigContext.INSTANCE, new ConfigPrimitive(key));
+            SerializeResult<ModuleInfo<T, M>> res = registry.byIdSerializer().deserialize(ConfigContext.INSTANCE, new ConfigPrimitive(key));
             if(!res.isComplete()) {
                 LOGGER.warn("Unknown module: " + key + " requested. Skipping...");
                 continue;
@@ -244,11 +243,11 @@ public class ModuleManager<T, M extends Module<T>> {
 
     /**
      * Reloads all modules
-     * @param config The module registry config (see {@link ModuleManager#generateConfig(RegistryBase) generateConfig})
+     * @param config The module registry config (see {@link ModuleManager#generateConfig(Registry) generateConfig})
      * @param data The data to pass into the module initializer
      * @param reg The registry containing all modules to load
      */
-    public void reloadAll(ConfigSection config, T data, RegistryBase<Identifier, ModuleInfo<T, M>> reg) {
+    public void reloadAll(ConfigSection config, T data, Registry<Identifier, ModuleInfo<T, M>> reg) {
 
         unloadAll();
         loadAll(config, data, reg);
@@ -300,7 +299,7 @@ public class ModuleManager<T, M extends Module<T>> {
      * @param <T> The type of data modules expect during initialization
      * @param <M> The type of modules to load
      */
-    public static <T, M extends Module<T>> ConfigSection generateConfig(RegistryBase<Identifier, ModuleInfo<T, M>> reg) {
+    public static <T, M extends Module<T>> ConfigSection generateConfig(Registry<Identifier, ModuleInfo<T, M>> reg) {
 
         ConfigSection out = new ConfigSection();
         for(ModuleInfo<T, M> info : reg) {
@@ -348,7 +347,7 @@ public class ModuleManager<T, M extends Module<T>> {
     }
 
 
-    private int loadWithDependencies(ModuleInfo<T, M> info, ConfigSection config, T data, RegistryBase<Identifier, ModuleInfo<T, M>> registry, Collection<ModuleInfo<T, M>> loading) {
+    private int loadWithDependencies(ModuleInfo<T, M> info, ConfigSection config, T data, Registry<Identifier, ModuleInfo<T, M>> registry, Collection<ModuleInfo<T, M>> loading) {
 
         if(loaded.get(info.getId()) != null) return 0;
 

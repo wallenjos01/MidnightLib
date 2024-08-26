@@ -9,7 +9,6 @@ import org.wallentines.mdcfg.serializer.InlineSerializer;
 @SuppressWarnings("unused")
 public class Identifier {
 
-
     private static final IllegalArgumentException EXCEPTION = new IllegalArgumentException("Unable to parse Identifier!");
 
     private final String namespace;

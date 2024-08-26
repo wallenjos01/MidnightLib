@@ -104,8 +104,8 @@ public class TestRequirements {
     @Test
     public void testRegistry() {
 
-        Registry<CheckType<String>> reg = Requirement.defaultRegistry("test");
-        reg.register("must_equal", MustEqual.TYPE);
+        Registry<Identifier, CheckType<String>> reg = Requirement.defaultRegistry("test");
+        reg.tryRegister("must_equal", MustEqual.TYPE);
 
         Serializer<Requirement<String, CheckType<String>>> ser = Requirement.serializer(reg);
 
