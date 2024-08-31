@@ -24,7 +24,7 @@ public class ModuleManager<T, M extends Module<T>> {
     private static final Logger LOGGER = LoggerFactory.getLogger("ModuleManager");
 
     private final Registry<Identifier, M> loaded;
-    private final HashMap<Class<? extends M>, Identifier> idsByClass = new HashMap<>();
+    private final HashMap<Class<?>, Identifier> idsByClass = new HashMap<>();
     private final HashMap<Identifier, Set<Identifier>> dependents = new HashMap<>();
 
     /**
@@ -70,7 +70,7 @@ public class ModuleManager<T, M extends Module<T>> {
 
             SerializeResult<ModuleInfo<T, M>> res = registry.byIdSerializer().deserialize(ConfigContext.INSTANCE, new ConfigPrimitive(key));
             if(!res.isComplete()) {
-                LOGGER.warn("Unknown module: " + key + " requested. Skipping...");
+                LOGGER.warn("Unknown module: {} requested. Skipping...", key);
                 continue;
             }
 
@@ -116,14 +116,14 @@ public class ModuleManager<T, M extends Module<T>> {
 
         for(Identifier dep : info.getDependencies()) {
             if(!loaded.hasKey(dep)) {
-                LOGGER.warn("One or more dependencies could not be found for module " + id + "! [" + dep + "]");
+                LOGGER.warn("One or more dependencies could not be found for manually-loaded module {}! [{}]", id, dep);
                 return false;
             }
         }
 
         try {
             if(!module.initialize(config, data)) {
-                LOGGER.warn("Unable to initialize module " + id + "!");
+                LOGGER.warn("Unable to initialize module {}!", id);
 
                 Event.unregisterAll(module);
                 module.disable();
@@ -131,7 +131,7 @@ public class ModuleManager<T, M extends Module<T>> {
             }
         } catch (Exception ex) {
 
-            LOGGER.warn("An error occurred while attempting to initialize module with ID " + id + "!", ex);
+            LOGGER.warn("An error occurred while attempting to initialize module with ID {}!", id, ex);
 
             return false;
         }
@@ -151,7 +151,7 @@ public class ModuleManager<T, M extends Module<T>> {
      * @param <O> The type of module to lookup
      */
     @Nullable
-    public <O extends M> O getModule(Class<O> clazz) {
+    public <O> O getModule(Class<O> clazz) {
 
         Identifier id = getModuleId(clazz);
         return id == null ? null : clazz.cast(loaded.get(id));
@@ -197,14 +197,14 @@ public class ModuleManager<T, M extends Module<T>> {
         if(mod == null) return;
 
         unloadWithDependents(mod, moduleId);
-        Collection<Class<? extends M>> classes = new ArrayList<>();
+        Collection<Class<?>> classes = new ArrayList<>();
 
-        for(Map.Entry<Class<? extends M>, Identifier> ent : idsByClass.entrySet()) {
+        for(Map.Entry<Class<?>, Identifier> ent : idsByClass.entrySet()) {
             if(ent.getValue().equals(moduleId)) {
                 classes.add(ent.getKey());
             }
         }
-        for(Class<? extends M> clazz : classes) {
+        for(Class<?> clazz : classes) {
             idsByClass.remove(clazz);
         }
 
@@ -260,7 +260,7 @@ public class ModuleManager<T, M extends Module<T>> {
      * @param <O> The type of module
      */
     @Nullable
-    public <O extends M> Identifier getModuleId(Class<O> clazz) {
+    public <O> Identifier getModuleId(Class<O> clazz) {
 
         return idsByClass.computeIfAbsent(clazz, k -> {
             for(M mod : loaded) {
@@ -354,7 +354,7 @@ public class ModuleManager<T, M extends Module<T>> {
         // Avoid infinite recursion if a module depends on itself by keeping track of which modules are currently in
         // the process of loading
         if(!loading.add(info)) {
-            LOGGER.warn("Detected cyclical dependency while loading module " + info.getId());
+            LOGGER.warn("Detected cyclical dependency while loading module {}", info.getId());
             return 0;
         }
 
@@ -363,7 +363,7 @@ public class ModuleManager<T, M extends Module<T>> {
 
             ModuleInfo<T, M> depend = registry.get(dep);
             if(depend == null) {
-                LOGGER.warn("One or more dependencies could not be found for module " + info.getId() + "! [" + dep + "]");
+                LOGGER.warn("One or more dependencies could not be found for module {}! [{}]", info.getId(), dep);
                 return count;
             }
 
