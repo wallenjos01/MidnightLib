@@ -63,6 +63,22 @@ public class ModuleManager<T, M extends Module<T>> {
     }
 
     /**
+     * Gets the registry where module infos are stored for this manager
+     * @return The module registry
+     */
+    public Registry<Identifier, ModuleInfo<T, M>> getRegistry() {
+        return registry;
+    }
+
+    /**
+     * Gets the data passed to each module initializer
+     * @return The init data passed to module initializers
+     */
+    public T getData() {
+        return data;
+    }
+
+    /**
      * Creates and initializes all modules from the given registry, reading the given config and passing in the given
      * data. All existing modules will be unloaded first.
      * @param config The module registry config (see {@link ModuleManager#generateConfig(Registry) generateConfig})
@@ -174,6 +190,16 @@ public class ModuleManager<T, M extends Module<T>> {
 
         Identifier id = getModuleId(clazz);
         return id == null ? null : clazz.cast(loaded.get(id));
+    }
+
+    /**
+     * Gets the module info for the module with the given ID, or null
+     * @param id The ID to lookup
+     * @return A module info, or null if the module is not registered
+     */
+    @Nullable
+    public ModuleInfo<T, M> getModuleInfo(Identifier id) {
+        return registry.get(id);
     }
 
     /**
