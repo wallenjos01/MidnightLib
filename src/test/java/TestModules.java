@@ -65,12 +65,12 @@ public class TestModules {
         Registry<Identifier, ModuleInfo<Void, Module<Void>>> reg = Registry.create("midnight");
         reg.register(id, info);
 
-        ModuleManager<Void, Module<Void>> manager = new ModuleManager<>();
+        ModuleManager<Void, Module<Void>> manager = new ModuleManager<>(reg, null);
 
         ConfigSection defaults = ModuleManager.generateConfig(reg);
         defaults.getSection("midnight:test").set("added", "Hello");
 
-        int loaded = manager.loadAll(defaults, null, reg);
+        int loaded = manager.loadAll(defaults);
         Assertions.assertEquals(1, loaded);
         Assertions.assertTrue(initialized.get());
 
@@ -88,12 +88,12 @@ public class TestModules {
 
         // Reloading
         initialized.set(false);
-        manager.reloadModule(id, defaults.getSection("midnight:test"), null, info);
+        manager.reloadModule(id, defaults.getSection("midnight:test"));
 
         Assertions.assertTrue(initialized.get());
 
         initialized.set(false);
-        manager.reloadAll(defaults, null, reg);
+        manager.reloadAll(defaults);
 
         Assertions.assertTrue(initialized.get());
 
@@ -112,7 +112,7 @@ public class TestModules {
         Registry<Identifier, ModuleInfo<Void, Module<Void>>> reg = Registry.create("midnight");
         reg.register(id, info);
 
-        ModuleManager<Void, Module<Void>> manager = new ModuleManager<>();
+        ModuleManager<Void, Module<Void>> manager = new ModuleManager<>(reg, null);
         manager.onLoad.register(this, ev -> {
             Assertions.assertEquals(TestModule.class, ev.getModule().getClass());
             Assertions.assertEquals(id, ev.getId());
@@ -127,7 +127,7 @@ public class TestModules {
         ConfigSection defaults = ModuleManager.generateConfig(reg);
         defaults.getSection("midnight:test").set("added", "Hello");
 
-        int loaded = manager.loadAll(defaults, null, reg);
+        int loaded = manager.loadAll(defaults);
         Assertions.assertEquals(1, loaded);
         Assertions.assertTrue(initialized.get());
         Assertions.assertTrue(eventLoaded.get());
@@ -156,13 +156,13 @@ public class TestModules {
         reg.register(id2, info2);
         reg.register(id, info);
 
-        ModuleManager<Void, Module<Void>> manager = new ModuleManager<>();
+        ModuleManager<Void, Module<Void>> manager = new ModuleManager<>(reg, null);
 
         ConfigSection defaults = ModuleManager.generateConfig(reg);
         defaults.getSection("midnight:test").set("added", "Hello");
         defaults.getSection("midnight:test2").set("added", "Hello2");
 
-        int loaded = manager.loadAll(defaults, null, reg);
+        int loaded = manager.loadAll(defaults);
         Assertions.assertEquals(2, loaded);
         Assertions.assertTrue(initialized.get());
 
@@ -196,11 +196,11 @@ public class TestModules {
         Registry<Identifier, ModuleInfo<String, Module<String>>> reg = Registry.create("midnight");
         reg.register(id, info);
 
-        ModuleManager<String, Module<String>> manager = new ModuleManager<>();
+        ModuleManager<String, Module<String>> manager = new ModuleManager<>(reg, "Fail");
 
         ConfigSection defaults = ModuleManager.generateConfig(reg);
 
-        int loaded = manager.loadAll(defaults, "Fail", reg);
+        int loaded = manager.loadAll(defaults);
         Assertions.assertEquals(0, loaded);
 
     }

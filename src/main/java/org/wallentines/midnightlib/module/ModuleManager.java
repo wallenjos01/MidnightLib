@@ -23,7 +23,10 @@ public class ModuleManager<T, M extends Module<T>> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("ModuleManager");
 
+    private final Registry<Identifier, ModuleInfo<T, M>> registry;
     private final Registry<Identifier, M> loaded;
+    private final T data;
+
     private final HashMap<Class<?>, Identifier> idsByClass = new HashMap<>();
     private final HashMap<Identifier, Set<Identifier>> dependents = new HashMap<>();
 
@@ -39,21 +42,33 @@ public class ModuleManager<T, M extends Module<T>> {
 
 
     /**
-     * Constructs a new module manager
+     * Constructs a new module manager for the given modules and init data
+     * @param modules The registry of module infos
+     * @param data The data to pass into module initializers
      */
-    public ModuleManager() {
-        this.loaded = Registry.create("unknown");
+    public ModuleManager(Registry<Identifier, ModuleInfo<T, M>> modules, T data) {
+        this(modules, data, "unknown");
+    }
+
+    /**
+     * Constructs a new module manager for the given modules, init data, and default namespace
+     * @param modules The registry of module infos
+     * @param data The data to pass into module initializers
+     * @param defaultNamespace The default namespace for modules
+     */
+    public ModuleManager(Registry<Identifier, ModuleInfo<T, M>> modules, T data, String defaultNamespace) {
+        this.registry = modules;
+        this.loaded = Registry.create(defaultNamespace);
+        this.data = data;
     }
 
     /**
      * Creates and initializes all modules from the given registry, reading the given config and passing in the given
      * data. All existing modules will be unloaded first.
      * @param config The module registry config (see {@link ModuleManager#generateConfig(Registry) generateConfig})
-     * @param data The data to pass into module initializers
-     * @param registry The registry when module information is stored.
      * @return How many modules were loaded
      */
-    public int loadAll(ConfigSection config, T data, Registry<Identifier, ModuleInfo<T, M>> registry) {
+    public int loadAll(ConfigSection config) {
 
         if(loaded.getSize() > 0) {
             unloadAll();
@@ -81,7 +96,7 @@ public class ModuleManager<T, M extends Module<T>> {
         }
 
         for(ModuleInfo<T, M> info : availableModules) {
-            count += loadWithDependencies(info, config, data, registry, new HashSet<>());
+            count += loadWithDependencies(info, config, new HashSet<>());
         }
 
         return count;
@@ -89,16 +104,20 @@ public class ModuleManager<T, M extends Module<T>> {
 
     /**
      * creates a module from the given module info and initializes it with the given data and configuration
-     * @param info The module info by which to create the module
-     * @param data The data to pass into the initializer
+     * @param id The ID of the module to load
      * @param config The module configuration
      * @return Whether loading was successful
      */
     @SuppressWarnings("unchecked")
-    public boolean loadModule(ModuleInfo<T, M> info, T data, ConfigSection config) {
+    public boolean loadModule(Identifier id, ConfigSection config) {
+
+        ModuleInfo<T, M> info = registry.get(id);
+        if (info == null) {
+            LOGGER.error("Could not find module with id {}", id);
+            return false;
+        }
 
         M module = info.create();
-        Identifier id = info.getId();
 
         if(idsByClass.containsKey(module.getClass())) {
             LOGGER.warn("Attempt to initialize two of the same module!");
@@ -116,7 +135,7 @@ public class ModuleManager<T, M extends Module<T>> {
 
         for(Identifier dep : info.getDependencies()) {
             if(!loaded.hasKey(dep)) {
-                LOGGER.warn("One or more dependencies could not be found for manually-loaded module {}! [{}]", id, dep);
+                LOGGER.warn("One or more dependencies could not be found for module {}! [{}]", id, dep);
                 return false;
             }
         }
@@ -232,25 +251,21 @@ public class ModuleManager<T, M extends Module<T>> {
      * Reloads a module with the given ID
      * @param moduleId The module ID to look up
      * @param config The module config
-     * @param data The data to pass into the initializer
-     * @param info The module info of new module
      */
-    public void reloadModule(Identifier moduleId, ConfigSection config, T data, ModuleInfo<T, M> info) {
+    public void reloadModule(Identifier moduleId, ConfigSection config) {
 
         unloadModule(moduleId);
-        loadModule(info, data, config);
+        loadModule(moduleId, config);
     }
 
     /**
      * Reloads all modules
      * @param config The module registry config (see {@link ModuleManager#generateConfig(Registry) generateConfig})
-     * @param data The data to pass into the module initializer
-     * @param reg The registry containing all modules to load
      */
-    public void reloadAll(ConfigSection config, T data, Registry<Identifier, ModuleInfo<T, M>> reg) {
+    public void reloadAll(ConfigSection config) {
 
         unloadAll();
-        loadAll(config, data, reg);
+        loadAll(config);
     }
 
     /**
@@ -347,7 +362,7 @@ public class ModuleManager<T, M extends Module<T>> {
     }
 
 
-    private int loadWithDependencies(ModuleInfo<T, M> info, ConfigSection config, T data, Registry<Identifier, ModuleInfo<T, M>> registry, Collection<ModuleInfo<T, M>> loading) {
+    private int loadWithDependencies(ModuleInfo<T, M> info, ConfigSection config, Collection<ModuleInfo<T, M>> loading) {
 
         if(loaded.get(info.getId()) != null) return 0;
 
@@ -363,17 +378,17 @@ public class ModuleManager<T, M extends Module<T>> {
 
             ModuleInfo<T, M> depend = registry.get(dep);
             if(depend == null) {
-                LOGGER.warn("One or more dependencies could not be found for module {}! [{}]", info.getId(), dep);
+                LOGGER.warn("One or more dependencies could not be loaded for module {}! [{}]", info.getId(), dep);
                 return count;
             }
 
             dependents.computeIfAbsent(depend.getId(), k -> new HashSet<>()).add(info.getId());
 
-            // Load dependencies first through recursion
-            count += loadWithDependencies(depend, config, data, registry, loading);
+            // Recursively load dependencies first
+            count += loadWithDependencies(depend, config, loading);
         }
 
-        if(loadModule(info, data, config.getSection(info.getId().toString()))) {
+        if(loadModule(info.getId(), config.getSection(info.getId().toString()))) {
             count++;
         }
 
