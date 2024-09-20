@@ -1,5 +1,7 @@
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.wallentines.mdcfg.serializer.InlineSerializer;
+import org.wallentines.midnightlib.registry.DefaultedRegistry;
 import org.wallentines.midnightlib.registry.Identifier;
 import org.wallentines.midnightlib.registry.Registry;
 
@@ -190,6 +192,40 @@ public class TestRegistry {
         Assertions.assertEquals("num2", reg2.getId(num2));
         Assertions.assertEquals("num3", reg2.getId(num3));
 
+    }
+
+    @Test
+    public void testDefaulted() {
+
+        DefaultedRegistry<String, WrappedNumber> reg = new DefaultedRegistry<>("unregistered", new WrappedNumber(0), InlineSerializer.RAW);
+
+        WrappedNumber num1 = new WrappedNumber(1);
+        WrappedNumber num2 = new WrappedNumber(2);
+        WrappedNumber num3 = new WrappedNumber(3);
+
+        reg.register("num1", num1);
+        reg.register("num2", num2);
+
+        Assertions.assertEquals(reg.getId(num1), "num1");
+        Assertions.assertEquals(reg.getId(num2), "num2");
+
+        Assertions.assertEquals(reg.get("num1"), num1);
+        Assertions.assertEquals(reg.get("num2"), num2);
+
+        Assertions.assertEquals(reg.get("num3"), new WrappedNumber(0));
+        Assertions.assertEquals("unregistered", reg.getId(num3));
+
+
+        Registry.Frozen<String, WrappedNumber> frozen = reg.freeze();
+
+        Assertions.assertEquals(frozen.getId(num1), "num1");
+        Assertions.assertEquals(frozen.getId(num2), "num2");
+
+        Assertions.assertEquals(frozen.get("num1"), num1);
+        Assertions.assertEquals(frozen.get("num2"), num2);
+
+        Assertions.assertEquals(frozen.get("num3"), new WrappedNumber(0));
+        Assertions.assertEquals("unregistered", frozen.getId(num3));
     }
 
 }

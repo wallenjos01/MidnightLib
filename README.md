@@ -10,16 +10,14 @@ repositories {
 }
 
 dependencies {
-    compileOnly("org.wallentines:midnightlib:1.6.1")
+    compileOnly("org.wallentines:midnightlib:1.7.0")
 }
 ```
 
 ## Features
 ### Registries
 - A registry is a data type which contains key-value pairs
-- There are two types by default: `Registry` and `StringRegistry`
-  - The `Registry` type expects keys of type `Identifier`
-  - The `StringRegistry` type expects keys of type `String`
+- 
 - Registries can be frozen using `RegistryBase::freeze()`, preventing them from being modified
 - Registries can be configured to prevent the same value from being registered twice
 
