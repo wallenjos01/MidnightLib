@@ -135,7 +135,12 @@ public class Requirement<V, T extends CheckType<V>> {
                         return SerializeResult.failure("Check serializer returned invalid result!");
                     }
 
-                    context.set("type", context.toString(registry.byIdSerializer().writeString(value.getType())), o);
+                    SerializeResult<String> type = registry.byIdSerializer().writeString(value.getType());
+                    if(!type.isComplete()) {
+                        return SerializeResult.failure("Unable to serialize type! " + type.getError());
+                    }
+
+                    context.set("type", context.toString(type.getOrNull()), o);
                     if(value.invert) context.set("invert", context.toBoolean(true), o);
 
                     return SerializeResult.success(o);
@@ -157,11 +162,12 @@ public class Requirement<V, T extends CheckType<V>> {
                 Boolean invertNullable = context.asBoolean(context.get("invert", value));
                 boolean invert = invertNullable != null && invertNullable;
 
-                T type = registry.byIdSerializer().readString(str);
-                if (type == null) {
-                    return SerializeResult.failure("Unable to find serializer for requirement type " + str + "!");
+                SerializeResult<T> typeRes = registry.byIdSerializer().readString(str);
+                if (!typeRes.isComplete()) {
+                    return SerializeResult.failure("Unable to find serializer for requirement type " + str + "! " + typeRes.getError());
                 }
 
+                T type = typeRes.getOrNull();
                 return type.deserialize(context, value).flatMap(chk -> constructor.apply(type, chk, invert));
             }
         };
