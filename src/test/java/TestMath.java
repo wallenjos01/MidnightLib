@@ -65,6 +65,73 @@ public class TestMath {
     }
 
     @Test
+    public void testRGBA() {
+
+        Color.RGBA gray = new Color.RGBA (100, 100, 100, 100);
+
+        Assertions.assertEquals(100, gray.getRed());
+        Assertions.assertEquals(100, gray.getGreen());
+        Assertions.assertEquals(100, gray.getBlue());
+        Assertions.assertEquals(100, gray.getAlpha());
+        Assertions.assertEquals("#64646464", gray.toHex());
+        Assertions.assertEquals("64646464", gray.toPlainHex());
+        Assertions.assertEquals(1684300900, gray.toDecimal());
+        Assertions.assertEquals(8, gray.toRGBI());
+
+        Color lightGray = gray.multiply(1.5);
+
+        Assertions.assertEquals(150, lightGray.getRed());
+        Assertions.assertEquals(150, lightGray.getGreen());
+        Assertions.assertEquals(150, lightGray.getBlue());
+        Assertions.assertEquals(100, lightGray.asRGBA().getAlpha());
+        Assertions.assertEquals("#96969664", lightGray.toHex());
+        Assertions.assertEquals("96969664", lightGray.toPlainHex());
+        Assertions.assertEquals(1687590550, lightGray.toDecimal());
+        Assertions.assertEquals(7, lightGray.toRGBI());
+
+        Assertions.assertEquals(50 * 50 * 3, gray.getDistanceSquaredTo(lightGray));
+        Assertions.assertEquals(50 * 50 * 3, lightGray.getDistanceSquaredTo(gray));
+
+        Assertions.assertEquals(50 * Math.sqrt(3), gray.getDistanceTo(lightGray));
+        Assertions.assertEquals(50 * Math.sqrt(3), lightGray.getDistanceTo(gray));
+
+        String unparsed = "37123456";
+        Color parsed = Color.parseOrNull(unparsed);
+
+        Assertions.assertNotNull(parsed);
+        Assertions.assertInstanceOf(Color.RGBA.class, parsed);
+        Assertions.assertEquals(18, parsed.getRed());
+        Assertions.assertEquals(52, parsed.getGreen());
+        Assertions.assertEquals(86, parsed.getBlue());
+        Assertions.assertEquals(55, ((Color.RGBA) parsed).getAlpha());
+
+        String unparsedPound = "#37563412";
+        Color parsedPound = Color.parseOrNull(unparsedPound);
+
+        Assertions.assertNotNull(parsedPound);
+        Assertions.assertInstanceOf(Color.RGBA.class, parsedPound);
+        Assertions.assertEquals(86, parsedPound.getRed());
+        Assertions.assertEquals(52, parsedPound.getGreen());
+        Assertions.assertEquals(18, parsedPound.getBlue());
+        Assertions.assertEquals(55, ((Color.RGBA) parsedPound).getAlpha());
+
+        ConfigSection unparsedSection = new ConfigSection().with("red", 255).with("green", 12).with("blue", 200).with("alpha", 22);
+        SerializeResult<Color> result = Color.SERIALIZER.deserialize(ConfigContext.INSTANCE, unparsedSection);
+
+        Assertions.assertTrue(result.isComplete());
+
+        Color c = result.getOrThrow();
+        Assertions.assertInstanceOf(Color.RGBA.class, c);
+
+        Assertions.assertEquals(255, c.getRed());
+        Assertions.assertEquals(12, c.getGreen());
+        Assertions.assertEquals(200, c.getBlue());
+        Assertions.assertEquals(22, c.asRGBA().getAlpha());
+
+    }
+
+
+    @Test
     public void testVec2i() {
 
         Vec2i vec2i = new Vec2i(1, 3);

@@ -128,6 +128,22 @@ public class Color {
         return this.closest4bitColor;
     }
 
+    /**
+     * Converts this color to an RGBA color
+     * @return This color as an RGBA color
+     */
+    public RGBA asRGBA() {
+        return new RGBA(red, green, blue, 255);
+    }
+
+    /**
+     * Converts this color to an Opaque color
+     * @return This color as an Opaque color
+     */
+    public Color asOpaque() {
+        return this;
+    }
+
     @Override
     public String toString() {
         return toHex();
@@ -211,32 +227,32 @@ public class Color {
      */
     public static SerializeResult<Color> parse(String hex) {
 
-        int r = -1;
-        int g = -1;
-        int b;
         try {
             if (hex.startsWith("#")) {
                 hex = hex.substring(1);
             }
-            if (hex.length() != 6) {
+            int length = hex.length();
+            if (length != 6 && length != 8) {
                 return SerializeResult.failure("'" + hex + "' cannot be converted to a color! Wrong length!");
             }
-            r = Integer.parseInt(hex.substring(0, 2), 16);
-            g = Integer.parseInt(hex.substring(2, 4), 16);
-            b = Integer.parseInt(hex.substring(4, 6), 16);
+
+            if(length == 8) {
+                int a = Integer.parseInt(hex.substring(0, 2), 16);
+                int r = Integer.parseInt(hex.substring(2, 4), 16);
+                int g = Integer.parseInt(hex.substring(4, 6), 16);
+                int b = Integer.parseInt(hex.substring(6, 8), 16);
+                return SerializeResult.success(new Color.RGBA(r,g,b,a));
+
+            } else {
+                int r = Integer.parseInt(hex.substring(0, 2), 16);
+                int g = Integer.parseInt(hex.substring(2, 4), 16);
+                int b = Integer.parseInt(hex.substring(4, 6), 16);
+                return SerializeResult.success(new Color(r,g,b));
+            }
 
         } catch (NumberFormatException ex) {
-
-            int offset = 1;
-            if(r > -1) offset += 2;
-            if(g > -1) offset += 2;
-
-            String invalid = hex.substring(offset, offset + 2);
-
-            return SerializeResult.failure("'" + hex + "' cannot be converted to a color! Invalid hex string " + invalid + "!");
+            return SerializeResult.failure("'" + hex + "' cannot be converted to a color! Invalid hex string " + hex + "!");
         }
-
-        return SerializeResult.success(new Color(r,g,b));
     }
 
 
@@ -274,6 +290,11 @@ public class Color {
                         return SerializeResult.failure("Missing one or more color channels!");
                     }
 
+                    Number a = context.asNumber(context.get("alpha", value));
+                    if(a != null) {
+                        return SerializeResult.success(new Color.RGBA(r.intValue(),g.intValue(),b.intValue(),a.intValue()));
+                    }
+
                     return SerializeResult.success(new Color(r.intValue(),g.intValue(),b.intValue()));
                 }
 
@@ -281,12 +302,19 @@ public class Color {
             }
     };
 
+    /**
+     * A color with an alpha channel.
+     */
     public static class RGBA extends Color {
 
         public final int alpha;
         public RGBA(int red, int green, int blue, int alpha) {
             super(red, green, blue);
             this.alpha = alpha;
+        }
+
+        public int getAlpha() {
+            return alpha;
         }
 
         @Override
@@ -300,11 +328,22 @@ public class Color {
         }
 
         @Override
-        public int toDecimal() {
-            return (red << 24) + super.toDecimal();
+        public RGBA multiply(double multiplier) {
+            return new RGBA((int) (red * multiplier), (int) (green * multiplier), (int) (blue * multiplier), alpha);
         }
 
-        public Color removeAlpha() {
+        @Override
+        public int toDecimal() {
+            return (alpha << 24) + super.toDecimal();
+        }
+
+        @Override
+        public RGBA asRGBA() {
+            return this;
+        }
+
+        @Override
+        public Color asOpaque() {
             return new Color(red, green, blue);
         }
     }
