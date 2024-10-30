@@ -15,9 +15,9 @@ public class Color {
     // An array of 4-bit (RGBI) colors with RGB values.
     private static final Color[] FOUR_BIT_COLORS = new Color[] {new Color(0, 0, 0), new Color(0, 0, 170), new Color(0, 170, 0), new Color(0, 170, 170), new Color(170, 0, 0), new Color(170, 0, 170), new Color(255, 170, 0), new Color(170, 170, 170), new Color(85, 85, 85), new Color(85, 85, 255), new Color(85, 255, 85), new Color(85, 255, 255), new Color(255, 85, 85), new Color(255, 85, 255), new Color(255, 255, 85), new Color(255, 255, 255)};
 
-    private final int red;
-    private final int green;
-    private final int blue;
+    public final int red;
+    public final int green;
+    public final int blue;
     private int closest4bitColor = -1;
 
     /**
@@ -280,5 +280,33 @@ public class Color {
                 return SerializeResult.failure("Don't know how to parse " + value + " as a color!");
             }
     };
+
+    public static class RGBA extends Color {
+
+        public final int alpha;
+        public RGBA(int red, int green, int blue, int alpha) {
+            super(red, green, blue);
+            this.alpha = alpha;
+        }
+
+        @Override
+        public String toPlainHex() {
+
+            String a = Integer.toHexString(this.alpha);
+            if (a.length() == 1) {
+                a = "0" + a;
+            }
+            return super.toPlainHex() + a;
+        }
+
+        @Override
+        public int toDecimal() {
+            return (red << 24) + super.toDecimal();
+        }
+
+        public Color removeAlpha() {
+            return new Color(red, green, blue);
+        }
+    }
 }
 
