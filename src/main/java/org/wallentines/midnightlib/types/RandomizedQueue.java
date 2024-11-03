@@ -1,9 +1,8 @@
 package org.wallentines.midnightlib.types;
 
-import java.util.AbstractQueue;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.Random;
+import org.jetbrains.annotations.NotNull;
+
+import java.util.*;
 
 /**
  * A Queue which randomizes objects as they enter
@@ -13,7 +12,7 @@ public class RandomizedQueue<T> extends AbstractQueue<T> {
 
     protected static final Random RANDOM = new Random();
     private final Random rand;
-    private final LinkedList<T> internal = new LinkedList<>();
+    private final List<T> internal = new ArrayList<>();
 
     /**
      * Constructs a new queue using the built-in Random object
@@ -31,7 +30,7 @@ public class RandomizedQueue<T> extends AbstractQueue<T> {
     }
 
     @Override
-    public Iterator<T> iterator() {
+    public @NotNull Iterator<T> iterator() {
         return internal.iterator();
     }
 
@@ -48,7 +47,7 @@ public class RandomizedQueue<T> extends AbstractQueue<T> {
             return true;
         }
 
-        int index = rand.nextInt(internal.size());
+        int index = rand.nextInt(internal.size() + 1);
         internal.add(index, t);
 
         return true;
@@ -56,12 +55,12 @@ public class RandomizedQueue<T> extends AbstractQueue<T> {
 
     @Override
     public T poll() {
-        return internal.removeFirst();
+        return internal.remove(0);
     }
 
     @Override
     public T peek() {
-        return internal.getFirst();
+        return internal.get(0);
     }
 
 
