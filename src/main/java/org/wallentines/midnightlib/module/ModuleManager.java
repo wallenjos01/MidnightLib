@@ -3,10 +3,7 @@ package org.wallentines.midnightlib.module;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.wallentines.mdcfg.ConfigPrimitive;
 import org.wallentines.mdcfg.ConfigSection;
-import org.wallentines.mdcfg.serializer.ConfigContext;
-import org.wallentines.mdcfg.serializer.SerializeResult;
 import org.wallentines.midnightlib.event.Event;
 import org.wallentines.midnightlib.event.HandlerList;
 import org.wallentines.midnightlib.registry.Identifier;
@@ -78,6 +75,7 @@ public class ModuleManager<T, M extends Module<T>> {
         return data;
     }
 
+
     /**
      * Creates and initializes all modules from the given registry, reading the given config and passing in the given
      * data. All existing modules will be unloaded first.
@@ -85,34 +83,40 @@ public class ModuleManager<T, M extends Module<T>> {
      * @return How many modules were loaded
      */
     public int loadAll(ConfigSection config) {
+        return loadAll(new ModuleConfigProvider.Default(config));
+    }
+
+    /**
+     * Creates and initializes all modules from the given registry, reading the given config and passing in the given
+     * data. All existing modules will be unloaded first.
+     * @param provider A module config provider.
+     * @return How many modules were loaded
+     */
+    public int loadAll(ModuleConfigProvider provider) {
 
         if(loaded.getSize() > 0) {
             unloadAll();
         }
 
-        config.fill(generateConfig(registry));
-
         List<ModuleInfo<T,M>> availableModules = new ArrayList<>();
 
         int count = 0;
-        for(String key : config.getKeys()) {
-
-            if(!config.hasSection(key)) continue;
-
-            SerializeResult<ModuleInfo<T, M>> res = registry.byIdSerializer().deserialize(ConfigContext.INSTANCE, new ConfigPrimitive(key));
-            if(!res.isComplete()) {
-                LOGGER.warn("Unknown module: {} requested. Skipping...", key);
-                continue;
+        for(ModuleInfo<T,M> info : registry) {
+            ConfigSection config = provider.getConfig(info.getId());
+            if(config == null) {
+                config = info.getDefaultConfig();
+            } else {
+                config.fill(info.getDefaultConfig());
             }
 
-            if(config.getSection(key).getBoolean("enabled")) {
-                availableModules.add(res.getOrThrow());
+            provider.setConfig(info.getId(), config);
+            if(config.getOrDefault("enabled", true)) {
+                availableModules.add(info);
             }
-
         }
 
         for(ModuleInfo<T, M> info : availableModules) {
-            count += loadWithDependencies(info, config, new HashSet<>());
+            count += loadWithDependencies(info, provider, new HashSet<>());
         }
 
         return count;
@@ -124,7 +128,6 @@ public class ModuleManager<T, M extends Module<T>> {
      * @param config The module configuration
      * @return Whether loading was successful
      */
-    @SuppressWarnings("unchecked")
     public boolean loadModule(Identifier id, ConfigSection config) {
 
         ModuleInfo<T, M> info = registry.get(id);
@@ -147,7 +150,8 @@ public class ModuleManager<T, M extends Module<T>> {
         ConfigSection defaults = info.getDefaultConfig();
         if(defaults == null) defaults = new ConfigSection();
 
-        config.fill(defaults);
+        ConfigSection toLoad = config.copy();
+        toLoad.fill(defaults);
 
         for(Identifier dep : info.getDependencies()) {
             if(!loaded.hasKey(dep)) {
@@ -157,7 +161,7 @@ public class ModuleManager<T, M extends Module<T>> {
         }
 
         try {
-            if(!module.initialize(config, data)) {
+            if(!module.initialize(toLoad, data)) {
                 LOGGER.warn("Unable to initialize module {}!", id);
 
                 Event.unregisterAll(module);
@@ -172,7 +176,7 @@ public class ModuleManager<T, M extends Module<T>> {
         }
 
         loaded.register(id, module);
-        idsByClass.put((Class<M>) loaded.getClass(), id);
+        idsByClass.put(loaded.getClass(), id);
 
         onLoad.invoke(new ModuleEvent(module, id));
 
@@ -388,7 +392,7 @@ public class ModuleManager<T, M extends Module<T>> {
     }
 
 
-    private int loadWithDependencies(ModuleInfo<T, M> info, ConfigSection config, Collection<ModuleInfo<T, M>> loading) {
+    private int loadWithDependencies(ModuleInfo<T, M> info, ModuleConfigProvider provider, Collection<ModuleInfo<T, M>> loading) {
 
         if(loaded.get(info.getId()) != null) return 0;
 
@@ -411,10 +415,10 @@ public class ModuleManager<T, M extends Module<T>> {
             dependents.computeIfAbsent(depend.getId(), k -> new HashSet<>()).add(info.getId());
 
             // Recursively load dependencies first
-            count += loadWithDependencies(depend, config, loading);
+            count += loadWithDependencies(depend, provider, loading);
         }
 
-        if(loadModule(info.getId(), config.getSection(info.getId().toString()))) {
+        if(loadModule(info.getId(), provider.getConfig(info.getId()))) {
             count++;
         }
 

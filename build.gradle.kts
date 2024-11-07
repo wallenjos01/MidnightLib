@@ -4,7 +4,7 @@ plugins {
 
 dependencies {
 
-    api("org.wallentines:midnightcfg-api:2.5.0-SNAPSHOT")
+    api("org.wallentines:midnightcfg-api:2.5.0")
     compileOnly("org.jetbrains:annotations:24.1.0")
 
     implementation("org.slf4j:slf4j-api:2.0.11")
