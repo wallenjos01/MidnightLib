@@ -10,7 +10,7 @@ repositories {
 }
 
 dependencies {
-    compileOnly("org.wallentines:midnightlib:1.7.0")
+    compileOnly("org.wallentines:midnightlib:1.7.1")
 }
 ```
 
@@ -29,7 +29,7 @@ dependencies {
 modules when they are loaded.
 - Next, create a `Registry` for `ModuleInfo` objects, and populate it with `ModuleInfo` objects
   - `ModuleInfo` objects define suppliers, default configurations, and dependencies for `Module` objects
-- Pass the registry to `ModuleManger::loadAll`, along with a `ConfigSection` containing module configurations, and a
+- Pass the registry to `ModuleManger::loadAll`, along with a `ConfigSection` or `ModuleConfigProvider` containing module configurations, and a
 data value of type `T`
 - `ModuleManager::loadAll` returns the number of modules successfully loaded
 
