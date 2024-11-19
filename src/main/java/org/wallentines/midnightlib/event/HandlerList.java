@@ -2,11 +2,11 @@ package org.wallentines.midnightlib.event;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.wallentines.midnightlib.types.SortedCollection;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -19,7 +19,7 @@ public class HandlerList<T> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("Event");
 
-    private final SortedCollection<WrappedHandler> handlers = new SortedCollection<>();
+    private final PriorityQueue<WrappedHandler> handlers = new PriorityQueue<>();
 
     // To prevent concurrent modification exceptions, calls to register(), invoke(), or unregisterAll() will be deferred
     // if an event is currently being invoked
@@ -61,7 +61,7 @@ public class HandlerList<T> {
             List<WrappedHandler> toRemove = new ArrayList<>();
 
             for (WrappedHandler handler : handlers) {
-                if (handler.listener.get() == null) {
+                if (handler == null || handler.listener.get() == null) {
                     toRemove.add(handler);
                     continue;
                 }
@@ -98,7 +98,7 @@ public class HandlerList<T> {
      * Unregisters all event handlers
      */
     public void unregisterAll() {
-        handlers.clear();
+        run(handlers::clear);
     }
 
     /**
@@ -106,7 +106,9 @@ public class HandlerList<T> {
      * @param listener The listener to lookup
      */
     public void unregisterAll(Object listener) {
-        run(() -> handlers.removeIf(wrappedHandler -> wrappedHandler.listener.get() == listener));
+        run(() -> handlers.removeIf(wrappedHandler
+                -> wrappedHandler != null
+                && wrappedHandler.listener.get() == listener));
     }
 
     private void run(Runnable run) {
