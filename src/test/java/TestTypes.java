@@ -20,6 +20,20 @@ public class TestTypes {
         Assertions.assertEquals(10, out.get(1));
         Assertions.assertEquals(50, out.get(2));
 
+        ints.remove(10);
+        out = new ArrayList<>(ints);
+        Assertions.assertEquals(0, out.get(0));
+        Assertions.assertEquals(50, out.get(1));
+
+        ints.add(-10);
+        out = new ArrayList<>(ints);
+        Assertions.assertEquals(-10, out.get(0));
+        Assertions.assertEquals(0, out.get(1));
+        Assertions.assertEquals(50, out.get(2));
+
+        ints.clear();
+        Assertions.assertEquals(0, ints.size());
+
     }
 
     @Test
