@@ -4,6 +4,9 @@ import org.wallentines.midnightlib.event.Event;
 import org.wallentines.midnightlib.event.HandlerList;
 import org.wallentines.midnightlib.event.SingletonHandlerList;
 
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class TestEvents {
@@ -135,4 +138,55 @@ public class TestEvents {
 
     }
 
+
+    @Test
+    public void testConcurrentInvoke() {
+
+        HandlerList<TestEvent> handlers = new HandlerList<>();
+        AtomicInteger handled = new AtomicInteger();
+        handlers.register(this, ev -> handled.getAndIncrement());
+
+        ThreadPoolExecutor exe = new ThreadPoolExecutor(8, 100, 5000L, TimeUnit.MILLISECONDS, new ArrayBlockingQueue<>(100));
+        for(int i = 0; i < 100 ; i++) {
+            final int index = i;
+            exe.submit(() -> handlers.invoke(new TestEvent(String.valueOf(index))));
+        }
+        try {
+            Thread.sleep(5000L);
+            exe.shutdown();
+        } catch (Exception ex) {
+            Assertions.fail(ex);
+        }
+
+        Assertions.assertEquals(100, handled.get());
+    }
+
+    @Test
+    public void testConcurrentRegister() {
+
+        HandlerList<TestEvent> handlers = new HandlerList<>();
+        AtomicInteger handled = new AtomicInteger();
+
+        ThreadPoolExecutor exe = new ThreadPoolExecutor(8, 100, 5000L, TimeUnit.MILLISECONDS, new ArrayBlockingQueue<>(100));
+        for(int i = 0; i < 100 ; i++) {
+            final int index = i;
+            exe.submit(() -> {
+                TestEvent event = new TestEvent(String.valueOf(index));
+                handlers.register(event, ev -> {
+                    handled.getAndIncrement();
+                    handlers.unregisterAll(event);
+                });
+            });
+        }
+        try {
+            Thread.sleep(5000L);
+            exe.shutdown();
+        } catch (Exception ex) {
+            Assertions.fail(ex);
+        }
+
+        handlers.invoke(new TestEvent(String.valueOf(-1)));
+
+        Assertions.assertEquals(100, handled.get());
+    }
 }
