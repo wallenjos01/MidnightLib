@@ -60,7 +60,7 @@ public interface Range<T extends Comparable<T>> {
      * @param <T> The type of values to compare
      */
     class Exact<T extends Comparable<T>> implements Range<T> {
-        private final T number;
+        public final T number;
 
         private Exact(T number) {
             this.number = number;
@@ -182,9 +182,9 @@ public interface Range<T extends Comparable<T>> {
      */
     class Comparison<T extends Comparable<T>> implements Range<T> {
 
-        final T value;
-        final boolean greater;
-        final boolean equal;
+        public final T value;
+        public final boolean greater;
+        public final boolean equal;
 
         private Comparison(T value, boolean greater, boolean equal) {
             this.value = value;

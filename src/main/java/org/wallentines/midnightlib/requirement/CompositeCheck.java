@@ -73,13 +73,34 @@ public class CompositeCheck<V, T extends CheckType<V>, R extends Requirement<V, 
 
     public static <V, T extends CheckType<V>, R extends Requirement<V,T>> boolean checkAll(Range<Integer> range, Collection<R> requirements, V data) {
 
-        Range<Integer> effectiveRange = range instanceof Range.All ? Range.exactly(requirements.size()) : range;
+        Range<Integer> effectiveRange;
+        int minBound = -1;
+
+        if(range instanceof Range.All) {
+            effectiveRange = Range.exactly(requirements.size());
+        } else {
+            effectiveRange = range;
+            if(range instanceof Range.Exact) {
+                minBound = ((Range.Exact<Integer>) range).number;
+            } else if(range instanceof Range.Comparison) {
+
+                Range.Comparison<Integer> cmp = (Range.Comparison<Integer>) range;
+                if(cmp.greater) {
+                    minBound = cmp.value;
+                    if(!cmp.equal) minBound++;
+                }
+
+            }
+        }
 
         int checked = 0;
+        int remaining = requirements.size();
         for(Requirement<V,T> r : requirements) {
+            if(checked + remaining < minBound) return false;
             if(r.check(data)) {
                 checked++;
             }
+            remaining--;
         }
 
         return effectiveRange.isWithin(checked);
