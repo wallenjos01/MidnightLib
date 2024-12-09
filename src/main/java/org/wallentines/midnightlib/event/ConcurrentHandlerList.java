@@ -8,9 +8,9 @@ import java.util.concurrent.*;
  */
 public class ConcurrentHandlerList<T> extends HandlerList<T> {
 
-    private final ExecutorService executor;
+    private final Executor executor;
 
-    public ConcurrentHandlerList(ExecutorService executor) {
+    public ConcurrentHandlerList(Executor executor) {
         this.executor = executor;
     }
 
@@ -24,10 +24,9 @@ public class ConcurrentHandlerList<T> extends HandlerList<T> {
             CompletableFuture.completedFuture(null);
         }
 
-        return CompletableFuture.allOf((CompletableFuture<?>[])
-                handlers.stream()
-                        .map(wh -> CompletableFuture.runAsync(() -> handle(wh.handler, event), executor))
-                        .toArray()
+        return CompletableFuture.allOf(handlers.stream()
+                .map(wh -> CompletableFuture.runAsync(() -> handle(wh.handler, event), executor))
+                .toArray(CompletableFuture[]::new)
         );
 
     }

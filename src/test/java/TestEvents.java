@@ -1,5 +1,6 @@
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.wallentines.midnightlib.event.ConcurrentHandlerList;
 import org.wallentines.midnightlib.event.Event;
 import org.wallentines.midnightlib.event.HandlerList;
 import org.wallentines.midnightlib.event.SingletonHandlerList;
@@ -186,6 +187,22 @@ public class TestEvents {
         }
 
         handlers.invoke(new TestEvent(String.valueOf(-1)));
+
+        Assertions.assertEquals(100, handled.get());
+    }
+
+
+    @Test
+    public void testConcurrentList() {
+        ThreadPoolExecutor svc = new ThreadPoolExecutor(8, 100, 5000L, TimeUnit.MILLISECONDS, new ArrayBlockingQueue<>(100));
+        ConcurrentHandlerList<AtomicInteger> handlers = new ConcurrentHandlerList<>(svc);
+        AtomicInteger handled = new AtomicInteger();
+
+        for(int i = 0; i < 100 ; i++) {
+            handlers.register(this, AtomicInteger::getAndIncrement);
+        }
+
+        handlers.invoke(handled);
 
         Assertions.assertEquals(100, handled.get());
     }
