@@ -14,7 +14,7 @@ public class HandlerList<T> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("Event");
 
-    private final PriorityBlockingQueue<WrappedHandler> handlers = new PriorityBlockingQueue<>();
+    protected final PriorityBlockingQueue<WrappedHandler> handlers = new PriorityBlockingQueue<>();
 
     /**
      * Registers a new event handler with the given listener
@@ -44,7 +44,7 @@ public class HandlerList<T> {
      */
     public void invoke(T event) {
 
-        handlers.removeIf(h -> h == null || h.listener.get() == null);
+        clearExpiredHandlers();
         for(WrappedHandler handler : handlers) {
             handle(handler.handler, event);
         }
@@ -80,7 +80,14 @@ public class HandlerList<T> {
                 && wrappedHandler.listener.get() == listener);
     }
 
-    private class WrappedHandler implements Comparable<WrappedHandler> {
+    /**
+     * Removes all handlers which have been garbage-collected
+     */
+    protected void clearExpiredHandlers() {
+        handlers.removeIf(h -> h == null || h.listener.get() == null);
+    }
+
+    protected class WrappedHandler implements Comparable<WrappedHandler> {
 
         final WeakReference<?> listener;
         final int priority;
