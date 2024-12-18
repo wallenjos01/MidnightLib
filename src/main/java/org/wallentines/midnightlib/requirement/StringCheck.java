@@ -25,7 +25,7 @@ public class StringCheck<T> implements Check<T> {
         };
     }
 
-    public static final Serializer<Collection<String>> STRING_SERIALIZER = Serializer.STRING.listOf().or(Serializer.STRING.map(col -> col.iterator().next(), List::of));
+    public static final Serializer<Collection<String>> STRING_SERIALIZER = Serializer.STRING.listOf().or(Serializer.STRING.flatMap(col -> col.iterator().next(), List::of));
 
 
     protected final Function<T, String> getter;

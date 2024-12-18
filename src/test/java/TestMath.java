@@ -471,7 +471,7 @@ public class TestMath {
         ConfigSection unparsedSection = new ConfigSection().with("origin", "3,6,9").with("radius", 12.5);
         SerializeResult<SphereRegion> result = SphereRegion.SERIALIZER.deserialize(ConfigContext.INSTANCE, unparsedSection);
 
-        Assertions.assertTrue(result.isComplete(), result.getError());
+        Assertions.assertTrue(result.isComplete(), result.getErrorMessage());
         Assertions.assertEquals(new Vec3d(3,6,9), result.getOrThrow().getOrigin());
         Assertions.assertEquals(12.5, result.getOrThrow().getRadius());
 

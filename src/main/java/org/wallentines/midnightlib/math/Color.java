@@ -1,7 +1,7 @@
 package org.wallentines.midnightlib.math;
 
 import org.jetbrains.annotations.Nullable;
-import org.wallentines.mdcfg.serializer.SerializeContext;
+import org.wallentines.mdcfg.serializer.ObjectSerializer;
 import org.wallentines.mdcfg.serializer.SerializeResult;
 import org.wallentines.mdcfg.serializer.Serializer;
 
@@ -268,39 +268,57 @@ public class Color {
 
     public static final Color WHITE = new Color(16777215);
 
-    public static final Serializer<Color> SERIALIZER = new Serializer<>() {
-            @Override
-            public <O> SerializeResult<O> serialize(SerializeContext<O> context, Color value) {
-
-                return SerializeResult.success(context.toString(value.toHex()));
-            }
-
-            @Override
-            public <O> SerializeResult<Color> deserialize(SerializeContext<O> context, O value) {
-
-                if(context.isString(value)) {
-                    return parse(context.asString(value));
-                }
-                if(context.isMap(value)) {
-                    Number r = context.asNumber(context.get("red", value));
-                    Number g = context.asNumber(context.get("green", value));
-                    Number b = context.asNumber(context.get("blue", value));
-
-                    if(r == null || g == null || b == null) {
-                        return SerializeResult.failure("Missing one or more color channels!");
+    public static final Serializer<Color> SERIALIZER = Serializer.STRING
+            .map(c -> SerializeResult.success(c.toHex()), Color::parse) // "#FFFFFF"
+            .or(Serializer.INT.flatMap(Color::toDecimal, Color::new)) // 0xFFFFFF
+            .or(ObjectSerializer.create( // { "red": 255, "green": 255, "blue": 255 }
+                    Serializer.INT.entry("red", Color::getRed),
+                    Serializer.INT.entry("green", Color::getGreen),
+                    Serializer.INT.entry("blue", Color::getBlue),
+                    Serializer.INT.<Color>entry("alpha", c -> c instanceof RGBA ? ((RGBA) c).alpha : null).optional(),
+                    (r,g,b,a) -> {
+                        if(a != null) {
+                            return new RGBA(r,g,b,a);
+                        }
+                        return new Color(r,g,b);
                     }
+            ));
 
-                    Number a = context.asNumber(context.get("alpha", value));
-                    if(a != null) {
-                        return SerializeResult.success(new Color.RGBA(r.intValue(),g.intValue(),b.intValue(),a.intValue()));
-                    }
-
-                    return SerializeResult.success(new Color(r.intValue(),g.intValue(),b.intValue()));
-                }
-
-                return SerializeResult.failure("Don't know how to parse " + value + " as a color!");
-            }
-    };
+//    public static final Serializer<Color> SERIALIZER = new Serializer<>() {
+//            @Override
+//            public <O> SerializeResult<O> serialize(SerializeContext<O> context, Color value) {
+//
+//                return SerializeResult.success(context.toString(value.toHex()));
+//            }
+//
+//            @Override
+//            public <O> SerializeResult<Color> deserialize(SerializeContext<O> context, O value) {
+//
+//
+//
+//                if(context.isString(value)) {
+//                    return parse(context.asString(value));
+//                }
+//                if(context.isMap(value)) {
+//                    Number r = context.asNumber(context.get("red", value));
+//                    Number g = context.asNumber(context.get("green", value));
+//                    Number b = context.asNumber(context.get("blue", value));
+//
+//                    if(r == null || g == null || b == null) {
+//                        return SerializeResult.failure("Missing one or more color channels!");
+//                    }
+//
+//                    Number a = context.asNumber(context.get("alpha", value));
+//                    if(a != null) {
+//                        return SerializeResult.success(new Color.RGBA(r.intValue(),g.intValue(),b.intValue(),a.intValue()));
+//                    }
+//
+//                    return SerializeResult.success(new Color(r.intValue(),g.intValue(),b.intValue()));
+//                }
+//
+//                return SerializeResult.failure("Don't know how to parse " + value + " as a color!");
+//            }
+//    };
 
     /**
      * A color with an alpha channel.

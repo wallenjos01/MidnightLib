@@ -126,51 +126,76 @@ public class Requirement<V, T extends CheckType<V>> {
      */
     public static <V, T extends CheckType<V>, R extends Requirement<V,T>> Serializer<R> serializer(Registry<?, T> registry, Functions.F3<T, Check<V>, Boolean, R> constructor) {
 
-        return new Serializer<>() {
-            @Override
-            public <O> SerializeResult<O> serialize(SerializeContext<O> context, R value) {
+        return registry.byIdSerializer().fieldOf("type").dispatch(type -> {
+            return new Serializer<R>() {
+                @Override
+                public <O> SerializeResult<O> serialize(SerializeContext<O> ctx, R requirement) {
 
-                return value.check.serialize(context).map(o -> {
-                    if (!context.isMap(o)) {
-                        return SerializeResult.failure("Check serializer returned invalid result!");
-                    }
+                    SerializeResult<O> out = requirement.check.serialize(ctx);
+                    if(!out.isComplete()) return out;
 
-                    SerializeResult<String> type = registry.byIdSerializer().writeString(value.getType());
-                    if(!type.isComplete()) {
-                        return SerializeResult.failure("Unable to serialize type! " + type.getError());
-                    }
+                    O map = out.getOrNull();
+                    if(!ctx.isMap(map)) return SerializeResult.failure("Check serializer returned invalid result!");
 
-                    context.set("type", context.toString(type.getOrNull()), o);
-                    if(value.invert) context.set("invert", context.toBoolean(true), o);
-
-                    return SerializeResult.success(o);
-                });
-            }
-
-            @Override
-            public <O> SerializeResult<R> deserialize(SerializeContext<O> context, O value) {
-
-                if (!context.isMap(value)) {
-                    return SerializeResult.failure("Expected a map!");
+                    if(requirement.invert) ctx.set("invert", ctx.toBoolean(true), map);
+                    return SerializeResult.success(map);
                 }
 
-                String str = context.asString(context.get("type", value));
-                if (str == null) {
-                    return SerializeResult.failure("Key type was missing!");
+                @Override
+                public <O> SerializeResult<R> deserialize(SerializeContext<O> ctx, O o) {
+                    boolean invert = ctx.asBoolean(ctx.get("invert", o)).getOr(false);
+                    return type.deserialize(ctx, o).flatMap(check -> constructor.apply(type, check, invert));
                 }
+            };
+        }, req -> {
+            return req.type;
+        });
 
-                Boolean invertNullable = context.asBoolean(context.get("invert", value));
-                boolean invert = invertNullable != null && invertNullable;
-
-                SerializeResult<T> typeRes = registry.byIdSerializer().readString(str);
-                if (!typeRes.isComplete()) {
-                    return SerializeResult.failure("Unable to find serializer for requirement type " + str + "! " + typeRes.getError());
-                }
-
-                T type = typeRes.getOrNull();
-                return type.deserialize(context, value).flatMap(chk -> constructor.apply(type, chk, invert));
-            }
-        };
+//        return new Serializer<>() {
+//            @Override
+//            public <O> SerializeResult<O> serialize(SerializeContext<O> context, R value) {
+//
+//                return value.check.serialize(context).map(o -> {
+//                    if (!context.isMap(o)) {
+//                        return SerializeResult.failure("Check serializer returned invalid result!");
+//                    }
+//
+//                    SerializeResult<String> type = registry.byIdSerializer().writeString(value.getType());
+//                    if(!type.isComplete()) {
+//                        return SerializeResult.failure("Unable to serialize type! " + type.getError());
+//                    }
+//
+//                    context.set("type", context.toString(type.getOrNull()), o);
+//                    if(value.invert) context.set("invert", context.toBoolean(true), o);
+//
+//                    return SerializeResult.success(o);
+//                });
+//            }
+//
+//            @Override
+//            public <O> SerializeResult<R> deserialize(SerializeContext<O> context, O value) {
+//
+//                if (!context.isMap(value)) {
+//                    return SerializeResult.failure("Expected a map!");
+//                }
+//
+//                String str = context.asString(context.get("type", value));
+//                if (str == null) {
+//                    return SerializeResult.failure("Key type was missing!");
+//                }
+//
+//                Boolean invertNullable = context.asBoolean(context.get("invert", value));
+//                boolean invert = invertNullable != null && invertNullable;
+//
+//                SerializeResult<T> typeRes = registry.byIdSerializer().readString(str);
+//                if (!typeRes.isComplete()) {
+//                    return SerializeResult.failure("Unable to find serializer for requirement type " + str + "! " + typeRes.getError());
+//                }
+//
+//                T type = typeRes.getOrNull();
+//                return type.deserialize(context, value).flatMap(chk -> constructor.apply(type, chk, invert));
+//            }
+//        };
     }
 
 

@@ -79,16 +79,11 @@ public interface Range<T extends Comparable<T>> {
                 }
                 @Override
                 public <O> SerializeResult<Exact<T>> deserialize(SerializeContext<O> ctx, O o) {
-                    if (ctx.isNumber(o)) {
-                        return SerializeResult.success(new Exact<>(converter.apply(ctx.asNumber(o))));
-                    } else if (ctx.isString(o)) {
-                        try {
-                            return SerializeResult.success(new Exact<>(parser.apply(ctx.asString(o))));
-                        } catch (Exception ex) {
-                            return SerializeResult.failure("An error occurred while trying to parse a number from a String!");
-                        }
-                    }
-                    return null;
+
+                    return ctx.asNumber(o)
+                            .flatMap(num -> new Exact<>(converter.apply(num)))
+                            .mapError(err -> ctx.asString(o)
+                                    .flatMap(str -> new Exact<>(parser.apply(str))));
                 }
             };
         }
@@ -128,17 +123,17 @@ public interface Range<T extends Comparable<T>> {
                     if (ctx.isList(o)) {
 
                         List<T> out = new ArrayList<>();
-                        for(O o1 : ctx.asList(o)) {
+                        for(O o1 : ctx.asList(o).getOrThrow()) {
                             if(!ctx.isNumber(o1)) {
                                 return SerializeResult.failure("Unable to parse list of numbers!");
                             }
-                            out.add(converter.apply(ctx.asNumber(o1)));
+                            out.add(converter.apply(ctx.asNumber(o1).getOrThrow()));
                         }
                         return SerializeResult.success(new Roster<>(out));
 
                     } else if (ctx.isString(o)) {
 
-                        String s = ctx.asString(o);
+                        String s = ctx.asString(o).getOrThrow();
 
                         String[] parts = s.split(",");
                         String firstPart = parts[0];
@@ -218,7 +213,7 @@ public interface Range<T extends Comparable<T>> {
                 @Override
                 public <O> SerializeResult<Comparison<T>> deserialize(SerializeContext<O> ctx, O o) {
                     if(!ctx.isString(o)) return SerializeResult.failure("Expected comparison to be a string!");
-                    String s = ctx.asString(o);
+                    String s = ctx.asString(o).getOrThrow();
 
                     if(s.charAt(0) != '>' && s.charAt(0) != '<') {
                         return SerializeResult.failure("Expected comparison to start with a < or >!");
@@ -283,30 +278,30 @@ public interface Range<T extends Comparable<T>> {
 
                 @Override
                 public <O> SerializeResult<Interval<T>> deserialize(SerializeContext<O> ctx, O o) {
-                    if (!ctx.isString(o)) return SerializeResult.failure("Expected interval to be a string!");
-                    String s = ctx.asString(o);
 
-                    if (s.charAt(0) != '[' && s.charAt(0) != '(' || s.charAt(s.length() - 1) != ']' && s.charAt(s.length() - 1) != ')') {
-                        return SerializeResult.failure("Expected interval to start and end with ( or [ and ) or ]!");
-                    }
+                    return ctx.asString(o).map(s -> {
+                        if (s.charAt(0) != '[' && s.charAt(0) != '(' || s.charAt(s.length() - 1) != ']' && s.charAt(s.length() - 1) != ')') {
+                            return SerializeResult.failure("Expected interval to start and end with ( or [ and ) or ]!");
+                        }
 
-                    String[] values = s.substring(1, s.length() - 1).split(",");
-                    if(values.length != 2) {
-                        return SerializeResult.failure("Expected interval to have exactly 2 elements!");
-                    }
+                        String[] values = s.substring(1, s.length() - 1).split(",");
+                        if(values.length != 2) {
+                            return SerializeResult.failure("Expected interval to have exactly 2 elements!");
+                        }
 
-                    boolean lowerOpen = s.charAt(0) == '(';
-                    boolean upperOpen = s.charAt(s.length() - 1) == ')';
+                        boolean lowerOpen = s.charAt(0) == '(';
+                        boolean upperOpen = s.charAt(s.length() - 1) == ')';
 
 
-                    try {
-                        T lower = parser.apply(values[0]);
-                        T upper = parser.apply(values[1]);
-                        return SerializeResult.success(new Interval<>(lower, upper, lowerOpen, upperOpen));
+                        try {
+                            T lower = parser.apply(values[0]);
+                            T upper = parser.apply(values[1]);
+                            return SerializeResult.success(new Interval<>(lower, upper, lowerOpen, upperOpen));
 
-                    } catch (Exception ex) {
-                        return SerializeResult.failure("Failed to parse a number! " + ex.getMessage());
-                    }
+                        } catch (Exception ex) {
+                            return SerializeResult.failure("Failed to parse a number! " + ex.getMessage());
+                        }
+                    });
                 }
             };
         }
