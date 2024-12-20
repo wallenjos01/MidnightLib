@@ -120,6 +120,12 @@ public class TestRequirements {
         Assertions.assertTrue(req.check("test2"));
         Assertions.assertFalse(req.check("test3"));
 
+
+        req = ser.deserialize(ConfigContext.INSTANCE, createConfig(Range.all())).getOrThrow();
+
+        Assertions.assertFalse(req.check("test"));
+        Assertions.assertFalse(req.check("test2"));
+        Assertions.assertFalse(req.check("test3"));
     }
 
     private static ConfigSection createConfig(Range<Integer> range) {
