@@ -75,6 +75,7 @@ public class CompositeCheck<T> implements Check<T> {
 
         if(count instanceof Range.All) {
             effectiveRange = Range.exactly(requirements.size());
+            minBound = requirements.size();
         } else {
             effectiveRange = count;
             if(count instanceof Range.Exact) {
