@@ -69,7 +69,7 @@ public class CompositeCheck<T> implements Check<T> {
 
     }
 
-    public static <T> boolean checkAll(Collection<Requirement<T>> requirements, Range<Integer> count, T data) {
+    public static <T, R extends Requirement<T>> boolean checkAll(Collection<R> requirements, Range<Integer> count, T data) {
         Range<Integer> effectiveRange;
         int minBound = -1;
 
@@ -91,7 +91,7 @@ public class CompositeCheck<T> implements Check<T> {
 
         int checked = 0;
         int remaining = requirements.size();
-        for(Requirement<T> req : requirements) {
+        for(R req : requirements) {
             if(checked + remaining < minBound) return false;
             if(req.check(data)) {
                 checked++;
