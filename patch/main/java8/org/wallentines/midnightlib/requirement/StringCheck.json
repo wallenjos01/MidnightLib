@@ -20,8 +20,8 @@
       "all"
     ],
     "type": "replace",
-    "find": "List::of",
-    "replace": "java.util.Arrays::asList"
+    "find": "Set::of",
+    "replace": "java.util.Collections::singleton"
   },
   {
     "lines": [

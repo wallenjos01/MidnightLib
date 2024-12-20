@@ -1,130 +1,140 @@
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.wallentines.mdcfg.ConfigObject;
+import org.wallentines.mdcfg.ConfigList;
 import org.wallentines.mdcfg.ConfigSection;
 import org.wallentines.mdcfg.serializer.ConfigContext;
-import org.wallentines.mdcfg.serializer.SerializeContext;
-import org.wallentines.mdcfg.serializer.SerializeResult;
 import org.wallentines.mdcfg.serializer.Serializer;
 import org.wallentines.midnightlib.math.Range;
-import org.wallentines.midnightlib.registry.Identifier;
 import org.wallentines.midnightlib.registry.Registry;
-import org.wallentines.midnightlib.requirement.Check;
-import org.wallentines.midnightlib.requirement.CheckType;
-import org.wallentines.midnightlib.requirement.Requirement;
+import org.wallentines.midnightlib.requirement.*;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
+import java.util.function.Function;
+
 
 public class TestRequirements {
 
+    @Test
+    public void testBoolean() {
 
-    private static class MustEqual implements Check<String> {
+        Registry<String, CheckType<Boolean, ?>> types = Registry.createStringRegistry();
+        types.register("boolean", new BooleanCheck.Type<>(Function.identity()));
 
-        private final String data;
+        Serializer<Requirement<Boolean>> ser = Requirement.serializer(types);
 
-        public MustEqual(String value) {
-            this.data = value;
-        }
+        Requirement<Boolean> req = ser.deserialize(ConfigContext.INSTANCE, new ConfigSection().with("type", "boolean").with("value", true)).getOrThrow();
 
-        @Override
-        public boolean check(String data) {
-            return Objects.equals(data, this.data);
-        }
-
-        @Override
-        public <O> SerializeResult<O> serialize(SerializeContext<O> context) {
-            return Serializer.STRING.fieldOf("value").serialize(context, data);
-        }
-
-        public static final CheckType<String> TYPE = new CheckType<String>() {
-            @Override
-            public <O> SerializeResult<Check<String>> deserialize(SerializeContext<O> context, O value) {
-                return Serializer.STRING.fieldOf("value").deserialize(context, value).flatMap(MustEqual::new);
-            }
-        };
-
+        Assertions.assertTrue(req.check(true));
+        Assertions.assertFalse(req.check(false));
     }
 
     @Test
-    public void testMultiRequirement() {
+    public void testString() {
 
-        List<Requirement<String, CheckType<String>>> lst = getRequirements();
+        Registry<String, CheckType<String, ?>> types = Registry.createStringRegistry();
+        types.register("string", new StringCheck.Type<>(Function.identity()));
 
-        Requirement<String, CheckType<String>> req = Requirement.composite(Range.atLeast(1), lst);
+        Serializer<Requirement<String>> ser = Requirement.serializer(types);
 
-        Assertions.assertTrue(req.check("Hello"));
-        Assertions.assertTrue(req.check("Hello2"));
-        Assertions.assertTrue(req.check("Hello3"));
-        Assertions.assertFalse(req.check("World"));
+        Requirement<String> req = ser.deserialize(ConfigContext.INSTANCE, new ConfigSection().with("type", "string").with("value", "test")).getOrThrow();
 
-        req = Requirement.composite(Range.all(), lst);
-        Assertions.assertFalse(req.check("Hello"));
-        Assertions.assertFalse(req.check("Hello2"));
-        Assertions.assertFalse(req.check("Hello3"));
-        Assertions.assertFalse(req.check("World"));
+        Assertions.assertTrue(req.check("test"));
+        Assertions.assertFalse(req.check("test2"));
 
-        req = Requirement.composite(Range.exactly(1), lst);
-        Assertions.assertFalse(req.check("Hello"));
-        Assertions.assertTrue(req.check("Hello2"));
-        Assertions.assertFalse(req.check("Hello3"));
-        Assertions.assertFalse(req.check("World"));
+        req = ser.deserialize(ConfigContext.INSTANCE, new ConfigSection().with("type", "string").with("value", new ConfigList().append("test").append("test2"))).getOrThrow();
 
-        req = Requirement.composite(Range.atLeast(1), lst);
-        Assertions.assertTrue(req.check("Hello"));
-        Assertions.assertTrue(req.check("Hello2"));
-        Assertions.assertTrue(req.check("Hello3"));
-        Assertions.assertFalse(req.check("World"));
-
-        req = Requirement.composite(Range.atMost(2), lst);
-        Assertions.assertTrue(req.check("Hello"));
-        Assertions.assertTrue(req.check("Hello2"));
-        Assertions.assertFalse(req.check("Hello3"));
-        Assertions.assertTrue(req.check("World"));
-
-        req = Requirement.composite(Range.closedInterval(2,3), lst);
-        Assertions.assertTrue(req.check("Hello"));
-        Assertions.assertFalse(req.check("Hello2"));
-        Assertions.assertTrue(req.check("Hello3"));
-        Assertions.assertFalse(req.check("World"));
-    }
-
-    private static List<Requirement<String, CheckType<String>>> getRequirements() {
-
-       return Arrays.asList(
-               Requirement.simple(new MustEqual("Hello")),
-               Requirement.simple(new MustEqual("Hello2")),
-               Requirement.simple(new MustEqual("Hello")),
-               Requirement.simple(new MustEqual("Hello3")),
-               Requirement.simple(new MustEqual("Hello3")),
-               Requirement.simple(new MustEqual("Hello3"))
-       );
+        Assertions.assertTrue(req.check("test"));
+        Assertions.assertTrue(req.check("test2"));
     }
 
     @Test
-    public void testRegistry() {
+    public void testNumber() {
 
-        Registry<Identifier, CheckType<String>> reg = Requirement.defaultRegistry("test");
-        reg.tryRegister("must_equal", MustEqual.TYPE);
+        Registry<String, CheckType<Number, ?>> types = Registry.createStringRegistry();
+        types.register("number", new NumberCheck.Type<>(Number::intValue, Range.INTEGER));
 
-        Serializer<Requirement<String, CheckType<String>>> ser = Requirement.serializer(reg);
+        Serializer<Requirement<Number>> ser = Requirement.serializer(types);
 
-        ConfigSection serialized = new ConfigSection()
-                .with("type", "test:must_equal")
-                .with("value", "Hello")
-                .with("invert", true);
+        Requirement<Number> req = ser.deserialize(ConfigContext.INSTANCE, new ConfigSection().with("type", "number").with("value", 1)).getOrThrow();
 
-        Requirement<String, CheckType<String>> req = ser.deserialize(ConfigContext.INSTANCE, serialized).getOrThrow();
+        Assertions.assertTrue(req.check(1));
+        Assertions.assertFalse(req.check(2));
 
-        Assertions.assertEquals(new Identifier("test", "must_equal"), reg.getId(req.getType()));
-        Assertions.assertFalse(req.check("Hello"));
-        Assertions.assertTrue(req.check("Hello1"));
-        Assertions.assertTrue(req.isInverted());
+        req = ser.deserialize(ConfigContext.INSTANCE, new ConfigSection().with("type", "number").with("value", new ConfigList().append(1).append(2))).getOrThrow();
 
-        ConfigObject reserialized = ser.serialize(ConfigContext.INSTANCE, req).getOrThrow();
-        Assertions.assertEquals(serialized, reserialized);
+        Assertions.assertTrue(req.check(1));
+        Assertions.assertTrue(req.check(2));
+
+        req = ser.deserialize(ConfigContext.INSTANCE, new ConfigSection().with("type", "number").with("value", ">1")).getOrThrow();
+
+        Assertions.assertFalse(req.check(1));
+        Assertions.assertTrue(req.check(2));
+    }
+
+    @Test
+    public void testComposite() {
+
+        Registry<String, CheckType<String, ?>> types = Registry.createStringRegistry();
+        types.register("string", new StringCheck.Type<>(Function.identity()));
+        types.register("composite", new CompositeCheck.Type<>(types));
+
+        Serializer<Requirement<String>> ser = Requirement.serializer(types);
+
+        Requirement<String> req = ser.deserialize(ConfigContext.INSTANCE, createConfig(Range.exactly(1))).getOrThrow();
+
+        Assertions.assertTrue(req.check("test"));
+        Assertions.assertTrue(req.check("test2"));
+        Assertions.assertFalse(req.check("test3"));
+
+
+        req = ser.deserialize(ConfigContext.INSTANCE, createConfig(Range.exactly(2))).getOrThrow();
+
+        Assertions.assertFalse(req.check("test"));
+        Assertions.assertFalse(req.check("test2"));
+        Assertions.assertFalse(req.check("test3"));
+
+
+        req = ser.deserialize(ConfigContext.INSTANCE, createConfig(Range.all())).getOrThrow();
+
+        Assertions.assertFalse(req.check("test"));
+        Assertions.assertFalse(req.check("test2"));
+        Assertions.assertFalse(req.check("test3"));
+
+
+        req = ser.deserialize(ConfigContext.INSTANCE, createConfig(Range.exactly(0))).getOrThrow();
+
+        Assertions.assertFalse(req.check("test"));
+        Assertions.assertFalse(req.check("test2"));
+        Assertions.assertTrue(req.check("test3"));
+
+
+        req = ser.deserialize(ConfigContext.INSTANCE, createConfig(Range.atLeast(1))).getOrThrow();
+
+        Assertions.assertTrue(req.check("test"));
+        Assertions.assertTrue(req.check("test2"));
+        Assertions.assertFalse(req.check("test3"));
+
+
+        req = ser.deserialize(ConfigContext.INSTANCE, createConfig(Range.greaterThan(0))).getOrThrow();
+
+        Assertions.assertTrue(req.check("test"));
+        Assertions.assertTrue(req.check("test2"));
+        Assertions.assertFalse(req.check("test3"));
 
     }
 
+    private static ConfigSection createConfig(Range<Integer> range) {
+        return new ConfigSection()
+                .with("type", "composite")
+                .with("values", new ConfigList()
+                        .append(new ConfigSection()
+                                .with("type", "string")
+                                .with("value", "test")
+                        )
+                        .append(new ConfigSection()
+                                .with("type", "string")
+                                .with("value", "test2")
+                        )
+                )
+                .with("count", range, Range.INTEGER);
+    }
 }

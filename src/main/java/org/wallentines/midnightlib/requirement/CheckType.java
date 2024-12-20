@@ -1,10 +1,12 @@
 package org.wallentines.midnightlib.requirement;
 
-import org.wallentines.mdcfg.serializer.SerializeContext;
-import org.wallentines.mdcfg.serializer.SerializeResult;
+import org.wallentines.mdcfg.serializer.Serializer;
+import org.wallentines.mdcfg.TypeReference;
 
-public interface CheckType<T> {
+public interface CheckType<T, C extends Check<T>> {
 
-    <O> SerializeResult<Check<T>> deserialize(SerializeContext<O> context, O value);
+    TypeReference<C> type();
+
+    Serializer<C> serializer();
 
 }

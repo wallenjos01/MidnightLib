@@ -146,7 +146,7 @@ public interface Range<T extends Comparable<T>> {
                         char firstChar = firstPart.charAt(0);
                         char lastChar = lastPart.charAt(lastPart.length() - 1);
                         parts[0] = firstPart.substring(1);
-                        parts[parts.length - 1] = lastPart.substring(0, lastPart.length() - 2);
+                        parts[parts.length - 1] = lastPart.substring(0, lastPart.length() - 1);
 
                         if (firstChar == '{') {
                             if (lastChar != '}') {
@@ -356,15 +356,15 @@ public interface Range<T extends Comparable<T>> {
             public <O> SerializeResult<O> serialize(SerializeContext<O> ctx, Range<T> range) {
 
                 if (range instanceof Range.Exact) {
-                    Range.Exact.serializer(converter, backConverter, parser).serialize(ctx, (Range.Exact<T>) range);
+                    return Range.Exact.serializer(converter, backConverter, parser).serialize(ctx, (Range.Exact<T>) range);
                 } else if (range instanceof Range.All) {
-                    Range.All.serializer().serialize(ctx, null);
+                    return Range.All.serializer().serialize(ctx, null);
                 } else if (range instanceof Range.Roster) {
-                    Range.Roster.serializer(converter, backConverter, parser).serialize(ctx, (Range.Roster<T>) range);
+                    return Range.Roster.serializer(converter, backConverter, parser).serialize(ctx, (Range.Roster<T>) range);
                 } else if (range instanceof Range.Comparison) {
-                    Range.Comparison.serializer(backConverter, parser).serialize(ctx, (Range.Comparison<T>) range);
+                    return Range.Comparison.serializer(backConverter, parser).serialize(ctx, (Range.Comparison<T>) range);
                 } else if (range instanceof Range.Interval) {
-                    Range.Interval.serializer(backConverter, parser).serialize(ctx, (Range.Interval<T>) range);
+                    return Range.Interval.serializer(backConverter, parser).serialize(ctx, (Range.Interval<T>) range);
                 }
 
                 return SerializeResult.failure("Don't know how to serialize " + range);

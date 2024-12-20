@@ -1,7 +1,6 @@
 package org.wallentines.midnightlib.requirement;
 
-import org.wallentines.mdcfg.serializer.SerializeContext;
-import org.wallentines.mdcfg.serializer.SerializeResult;
+import org.wallentines.mdcfg.TypeReference;
 import org.wallentines.mdcfg.serializer.Serializer;
 import org.wallentines.midnightlib.math.Range;
 
@@ -9,54 +8,62 @@ import java.util.function.Function;
 
 public class NumberCheck<T, N extends Comparable<N>> implements Check<T> {
 
-    public static <T> CheckType<T> forInt(Function<T, Integer> getter) {
-        return type(getter, Range.INTEGER);
-    }
-
-    public static <T> CheckType<T>forLong(Function<T, Long> getter) {
-        return type(getter, Range.LONG);
-    }
-
-    public static <T> CheckType<T> forDouble(Function<T, Double> getter) {
-        return type(getter, Range.DOUBLE);
-    }
-
-    public static <T, N extends Comparable<N>> CheckType<T> type(Function<T, N> getter, Serializer<Range<N>> serializer) {
-
-        return type(serializer, range -> new NumberCheck<>(serializer, getter, range));
-    }
-
-    public static <T, N extends Comparable<N>> CheckType<T> type(Serializer<Range<N>> serializer, Function<Range<N>, Check<T>> constructor) {
-        return new CheckType<T>() {
-            @Override
-            public <O> SerializeResult<Check<T>> deserialize(SerializeContext<O> context, O value) {
-                return serializer.fieldOf("value").deserialize(context, value).flatMap(constructor);
-            }
-        };
-    }
-
-    private final Serializer<Range<N>> serializer;
-    private final Function<T, N> getter;
+    private final Type<T, N> type;
     private final Range<N> range;
 
-    public NumberCheck(Serializer<Range<N>> serializer, Function<T, N> getter, Range<N> range) {
-        this.serializer = serializer;
-        this.getter = getter;
+    public NumberCheck(Type<T, N> type, Range<N> range) {
+        this.type = type;
         this.range = range;
     }
 
-    public Range<N> getRange() {
+    public Range<N> range() {
         return range;
     }
 
     @Override
     public boolean check(T t) {
-        return range.isWithin(getter.apply(t));
+        return range.isWithin(type.getter.apply(t));
     }
 
     @Override
-    public <O> SerializeResult<O> serialize(SerializeContext<O> context) {
-        return serializer.fieldOf("value").serialize(context, range);
+    public Type<T, N> type() {
+        return type;
+    }
+
+
+    public static class Type<T, N extends Comparable<N>> implements CheckType<T, NumberCheck<T, N>> {
+
+        private final Function<T, N> getter;
+        private final Serializer<NumberCheck<T, N>> serializer;
+
+        public Type(Function<T, N> getter, Serializer<Range<N>> rangeSerializer) {
+            this.getter = getter;
+            this.serializer = rangeSerializer.fieldOf("value").flatMap(NumberCheck::range, range -> new NumberCheck<>(this, range));
+        }
+
+        @Override
+        public TypeReference<NumberCheck<T, N>> type() {
+            return new TypeReference<NumberCheck<T, N>>() {};
+        }
+
+        @Override
+        public Serializer<NumberCheck<T, N>> serializer() {
+            return serializer;
+        }
+
+
+        public static <T> Type<T, Integer> forInt(Function<T, Integer> getter) {
+            return new Type<>(getter, Range.INTEGER);
+        }
+
+        public static <T> Type<T, Long> forLong(Function<T, Long> getter) {
+            return new Type<>(getter, Range.LONG);
+        }
+
+        public static <T> Type<T, Double> forDouble(Function<T, Double> getter) {
+            return new Type<>(getter, Range.DOUBLE);
+        }
+
     }
 
 }
