@@ -50,18 +50,6 @@ public class CompositeCheck<T> implements Check<T> {
 
         }
 
-        static <T, C extends Check<T>> Serializer<Check<T>> generify(CheckType<T, C> type) {
-            Serializer<C> serializer = type.serializer();
-            TypeReference<C> ref = type.type();
-
-            return serializer.cast(ref, new TypeReference<Check<T>>() {});
-        }
-
-        @Override
-        public TypeReference<CompositeCheck<T>> type() {
-            return new TypeReference<CompositeCheck<T>>() {};
-        }
-
         @Override
         public Serializer<CompositeCheck<T>> serializer() {
             return serializer;

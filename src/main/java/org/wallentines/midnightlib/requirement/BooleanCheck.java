@@ -34,11 +34,6 @@ public class BooleanCheck<T> implements Check<T> {
         private final Function<T, Boolean> getter;
         private final Serializer<BooleanCheck<T>> serializer;
 
-        @Override
-        public TypeReference<BooleanCheck<T>> type() {
-            return new TypeReference<BooleanCheck<T>>() {};
-        }
-
         public Type(Function<T, Boolean> getter) {
             this.getter = getter;
             this.serializer = Serializer.BOOLEAN.fieldOf("value").flatMap(chk -> chk.value, bool -> new BooleanCheck<>(this, bool));

@@ -45,11 +45,6 @@ public class StringCheck<T> implements Check<T> {
         }
 
         @Override
-        public TypeReference<StringCheck<T>> type() {
-            return new TypeReference<StringCheck<T>>() {};
-        }
-
-        @Override
         public Serializer<StringCheck<T>> serializer() {
             return serializer;
         }

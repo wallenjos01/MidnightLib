@@ -10,7 +10,7 @@ public interface Check<T> {
     CheckType<T, ?> type();
 
     static <T> Serializer<Check<T>> serializer(Registry<?, CheckType<T, ?>> registry) {
-        return registry.byIdSerializer().fieldOf("type").dispatch(CompositeCheck.Type::generify, Check::type);
+        return registry.byIdSerializer().fieldOf("type").dispatch(CheckType::serializer, Check::type);
     }
 
 }

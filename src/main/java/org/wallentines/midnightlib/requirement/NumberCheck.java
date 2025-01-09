@@ -42,11 +42,6 @@ public class NumberCheck<T, N extends Comparable<N>> implements Check<T> {
         }
 
         @Override
-        public TypeReference<NumberCheck<T, N>> type() {
-            return new TypeReference<NumberCheck<T, N>>() {};
-        }
-
-        @Override
         public Serializer<NumberCheck<T, N>> serializer() {
             return serializer;
         }
