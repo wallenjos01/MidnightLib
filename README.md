@@ -10,16 +10,11 @@ repositories {
 }
 
 dependencies {
-    compileOnly("org.wallentines:midnightlib:2.0.0")
+    compileOnly("org.wallentines:midnightlib:2.2.0")
 }
 ```
 
 ## Features
-### Registries
-- A registry is a data type which contains key-value pairs
-- 
-- Registries can be frozen using `RegistryBase::freeze()`, preventing them from being modified
-- Registries can be configured to prevent the same value from being registered twice
 
 ### Modules
 - MidnightLib has a system which allows you to create configurable modules which can be enabled or disabled at runtime.
