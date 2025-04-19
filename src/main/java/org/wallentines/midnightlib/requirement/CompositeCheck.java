@@ -1,9 +1,8 @@
 package org.wallentines.midnightlib.requirement;
 
-import org.wallentines.mdcfg.TypeReference;
 import org.wallentines.mdcfg.serializer.*;
+import org.wallentines.mdcfg.registry.Registry;
 import org.wallentines.midnightlib.math.Range;
-import org.wallentines.midnightlib.registry.Registry;
 
 import java.util.Collection;
 

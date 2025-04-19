@@ -3,7 +3,7 @@ package org.wallentines.midnightlib.module;
 import org.jetbrains.annotations.Nullable;
 import org.wallentines.mdcfg.ConfigObject;
 import org.wallentines.mdcfg.ConfigSection;
-import org.wallentines.midnightlib.registry.Identifier;
+import org.wallentines.mdcfg.registry.Identifier;
 
 public interface ModuleConfigProvider {
 

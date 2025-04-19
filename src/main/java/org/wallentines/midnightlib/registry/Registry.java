@@ -16,6 +16,7 @@ import java.util.stream.Stream;
  * @param <I> The key type
  * @param <T> The value type
  */
+@Deprecated
 public class Registry<I, T> implements Iterable<T> {
 
     protected final InlineSerializer<I> idSerializer;

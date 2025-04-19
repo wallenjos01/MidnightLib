@@ -1,7 +1,7 @@
 package org.wallentines.midnightlib.requirement;
 
 import org.wallentines.mdcfg.serializer.Serializer;
-import org.wallentines.midnightlib.registry.Registry;
+import org.wallentines.mdcfg.registry.Registry;
 
 public interface Check<T> {
 

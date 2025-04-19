@@ -1,9 +1,9 @@
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.wallentines.mdcfg.serializer.InlineSerializer;
-import org.wallentines.midnightlib.registry.DefaultedRegistry;
-import org.wallentines.midnightlib.registry.Identifier;
-import org.wallentines.midnightlib.registry.Registry;
+import org.wallentines.mdcfg.registry.DefaultedRegistry;
+import org.wallentines.mdcfg.registry.Identifier;
+import org.wallentines.mdcfg.registry.Registry;
 
 import java.util.Objects;
 

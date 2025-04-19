@@ -11,6 +11,7 @@ import java.util.Map;
  * @param <I> The key type for this registry
  * @param <T> The value type for this registry
  */
+@Deprecated
 public class DefaultedRegistry<I, T> extends Registry<I, T> {
 
     private final I defaultKey;

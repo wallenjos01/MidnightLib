@@ -1,7 +1,7 @@
 package org.wallentines.midnightlib.module;
 
 import org.wallentines.mdcfg.ConfigSection;
-import org.wallentines.midnightlib.registry.Identifier;
+import org.wallentines.mdcfg.registry.Identifier;
 
 import java.util.ArrayList;
 import java.util.List;

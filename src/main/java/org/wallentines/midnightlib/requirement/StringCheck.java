@@ -1,6 +1,5 @@
 package org.wallentines.midnightlib.requirement;
 
-import org.wallentines.mdcfg.TypeReference;
 import org.wallentines.mdcfg.serializer.Serializer;
 
 import java.util.Collection;

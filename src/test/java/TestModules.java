@@ -4,8 +4,8 @@ import org.wallentines.mdcfg.ConfigSection;
 import org.wallentines.midnightlib.module.Module;
 import org.wallentines.midnightlib.module.ModuleInfo;
 import org.wallentines.midnightlib.module.ModuleManager;
-import org.wallentines.midnightlib.registry.Identifier;
-import org.wallentines.midnightlib.registry.Registry;
+import org.wallentines.mdcfg.registry.Identifier;
+import org.wallentines.mdcfg.registry.Registry;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
